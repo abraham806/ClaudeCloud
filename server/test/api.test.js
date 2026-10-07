@@ -1,4 +1,4 @@
-import { test, before } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,10 +9,14 @@ import request from 'supertest';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'facturo-test-'));
 process.env.UPLOAD_DIR = path.join(tmp, 'uploads');
 
-const { openDatabase } = await import('../src/db.js');
+const { createDb } = await import('../src/db.js');
+const { createStorage } = await import('../src/storage.js');
 const { createApp } = await import('../src/app.js');
 
-const app = createApp(openDatabase(':memory:'));
+// TEST_DATABASE_URL permet de lancer les tests sur un vrai serveur Postgres.
+const db = createDb({ url: process.env.TEST_DATABASE_URL });
+after(() => db.close());
+const app = createApp(db, createStorage({ uploadDir: process.env.UPLOAD_DIR }));
 let token;
 const auth = () => ({ Authorization: `Bearer ${token}` });
 
@@ -36,7 +40,7 @@ test('refuse les requêtes non authentifiées', async () => {
 });
 
 test('connexion', async () => {
-  const ok = await request(app).post('/api/auth/login').send({ email: 'awa@example.com', password: 'motdepasse' });
+  const ok = await request(app).post('/api/auth/login').send({ email: 'Awa@Example.com', password: 'motdepasse' });
   assert.equal(ok.status, 200);
   const ko = await request(app).post('/api/auth/login').send({ email: 'awa@example.com', password: 'mauvais' });
   assert.equal(ko.status, 401);

@@ -10,7 +10,7 @@ import { documentRoutes } from './routes/documents.js';
 import { reportRoutes } from './routes/reports.js';
 import { userRoutes } from './routes/users.js';
 
-export function createApp(db) {
+export function createApp(db, storage) {
   const app = express();
   app.use(cors({ origin: config.corsOrigin, exposedHeaders: ['Content-Disposition'] }));
   app.use(express.json({ limit: '1mb' }));
@@ -18,16 +18,17 @@ export function createApp(db) {
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRoutes(db));
   app.use('/api/company', requireAuth, companyRoutes(db));
-  app.use('/api/documents', requireAuth, documentRoutes(db));
+  app.use('/api/documents', requireAuth, documentRoutes(db, storage));
   app.use('/api/reports', requireAuth, reportRoutes(db));
   app.use('/api/users', requireAuth, userRoutes(db));
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Route inconnue' }));
 
   // En production, le même serveur sert l'application web compilée (web/dist).
-  if (config.webDist && fs.existsSync(path.join(config.webDist, 'index.html'))) {
+  if (!config.onVercel && config.webDist && fs.existsSync(path.join(config.webDist, 'index.html'))) {
     app.use(express.static(config.webDist, { index: false, maxAge: '1h' }));
-    app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(config.webDist, 'index.html')));
+    // Routes de l'application (pas les fichiers manquants) → index.html.
+    app.get(/^(?!\/api)(?!.*\.\w+$).*/, (_req, res) => res.sendFile(path.join(config.webDist, 'index.html')));
   }
 
   // eslint-disable-next-line no-unused-vars

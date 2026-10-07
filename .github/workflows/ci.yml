@@ -5,12 +5,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: facturo_test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci --prefix server
-      - run: npm test --prefix server
-      - run: npm ci --prefix web
-      - run: npm run build --prefix web
+          cache: npm
+      - run: npm ci
+      - name: Tests (PGlite)
+        run: npm test
+      - name: Tests (PostgreSQL 16)
+        run: npm test
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/facturo_test
+      - run: npm run build

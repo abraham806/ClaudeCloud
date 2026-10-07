@@ -28,45 +28,53 @@ ordinateur et sur téléphone (installable sur l'écran d'accueil).
 ## Structure
 
 ```
-server/   API REST (Node.js, Express, SQLite) — sert aussi l'application web compilée
+api/      Point d'entrée Vercel (fonction serverless qui sert l'API Express)
+server/   API REST (Node.js, Express, PostgreSQL)
 web/      Application web (React + Vite), responsive mobile
 ```
+
+Base de données : PostgreSQL (Neon en production). En local et dans les tests,
+PGlite (un Postgres embarqué) est utilisé automatiquement : rien à installer.
+Justificatifs : Vercel Blob en production, dossier local sinon.
 
 ## Lancer en local
 
 Prérequis : Node.js 20 ou plus.
 
 ```bash
-npm run install:all
-npm run dev:api     # API sur http://localhost:4000
+npm install
+npm run dev:api     # API sur http://localhost:4000 (données dans server/data/)
 npm run dev:web     # application sur http://localhost:5173
 ```
 
-Tests de l'API : `npm test`.
+Tests : `npm test` (PGlite) ou `TEST_DATABASE_URL=postgres://… npm test` (vrai serveur Postgres).
 
-## Mettre en ligne
+## Mettre en ligne sur Vercel
 
-L'API sert l'application web compilée : un seul service suffit.
+1. Sur vercel.com : **Add New › Project**, importer le dépôt GitHub. Vercel lit
+   `vercel.json` : aucun réglage de build à modifier.
+2. Dans le projet, onglet **Storage** :
+   - **Create Database › Neon (Postgres)** et la relier au projet (ajoute `DATABASE_URL`) ;
+   - **Create › Blob** et le relier au projet (ajoute `BLOB_READ_WRITE_TOKEN`).
+3. **Settings › Environment Variables** : ajouter `JWT_SECRET` (une longue chaîne aléatoire,
+   par exemple le résultat de `openssl rand -hex 32`).
+4. **Deployments › Redeploy**. Les tables sont créées automatiquement au premier appel.
 
-**Docker**
+Chaque push sur GitHub redéploie l'application (aperçu pour les branches, production pour `main`).
+
+Limites liées à Vercel : 4,5 Mo par envoi ; les photos sont compressées dans le navigateur
+avant l'envoi et les fichiers sont envoyés un par un (4 Mo maximum par PDF).
+
+## Autres hébergements
+
+**Docker** (un seul conteneur, base PGlite dans `/data`, ou Postgres via `DATABASE_URL`) :
 
 ```bash
 docker build -t facturo .
 docker run -p 4000:4000 -e JWT_SECRET=une-longue-chaine-secrete -v facturo-data:/data facturo
 ```
 
-**Render** : New › Blueprint › ce dépôt (le fichier `render.yaml` crée le service,
-le disque persistant et le secret).
+**Render** : New › Blueprint › ce dépôt (`render.yaml`).
 
-**Sans Docker**
-
-```bash
-npm run install:all && npm run build
-JWT_SECRET=une-longue-chaine-secrete npm start
-```
-
-Variables d'environnement : `PORT` (4000), `JWT_SECRET` (obligatoire en production),
-`DB_FILE`, `UPLOAD_DIR`, `MAX_UPLOAD_MB` (10), `CORS_ORIGIN`.
-
-Les données (base SQLite et justificatifs) sont dans `server/data/` par défaut,
-`/data` dans l'image Docker : ce dossier doit être sur un disque persistant et sauvegardé.
+Variables d'environnement : `JWT_SECRET` (obligatoire en production), `DATABASE_URL`,
+`BLOB_READ_WRITE_TOKEN`, `PORT` (4000), `PGLITE_DIR`, `UPLOAD_DIR`, `MAX_UPLOAD_MB`, `CORS_ORIGIN`.

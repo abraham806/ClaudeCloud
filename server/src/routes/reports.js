@@ -7,23 +7,22 @@ import { buildWorkbook, EXPORT_FORMATS } from '../services/excel.js';
 export function reportRoutes(db) {
   const r = Router();
 
-  r.get('/stats', (req, res) => {
+  r.get('/stats', async (req, res) => {
     const period = parse(periodSchema, req.query);
-    res.json(getStats(db, req.user.company_id, period));
+    res.json(await getStats(db, req.user.company_id, period));
   });
 
   r.get('/export/formats', (_req, res) => {
     res.json(Object.entries(EXPORT_FORMATS).map(([id, f]) => ({ id, label: f.label })));
   });
 
-  r.get('/export/history', (req, res) => {
+  r.get('/export/history', async (req, res) => {
     res.json(
-      db
-        .prepare(
-          `SELECT e.*, u.name AS user_name FROM exports e LEFT JOIN users u ON u.id = e.user_id
-           WHERE e.company_id = ? ORDER BY e.id DESC LIMIT 20`,
-        )
-        .all(req.user.company_id),
+      await db.query(
+        `SELECT e.*, u.name AS user_name FROM exports e LEFT JOIN users u ON u.id = e.user_id
+         WHERE e.company_id = $1 ORDER BY e.id DESC LIMIT 20`,
+        [req.user.company_id],
+      ),
     );
   });
 
@@ -31,13 +30,14 @@ export function reportRoutes(db) {
   r.get('/export', async (req, res) => {
     const period = parse(periodSchema, req.query);
     const format = req.query.format || 'standard';
-    const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.user.company_id);
-    const docs = documentsForExport(db, req.user.company_id, period);
+    const company = await db.one('SELECT * FROM companies WHERE id = $1', [req.user.company_id]);
+    const docs = await documentsForExport(db, req.user.company_id, period);
     const buffer = await buildWorkbook(format, docs, company);
-    db.prepare(
+    await db.run(
       `INSERT INTO exports (company_id, user_id, format, date_from, date_to, kind, doc_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(req.user.company_id, req.user.id, format, period.from || null, period.to || null, period.kind || null, docs.length);
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [req.user.company_id, req.user.id, format, period.from || null, period.to || null, period.kind || null, docs.length],
+    );
     const name = `export-${format}-${period.from || 'debut'}-${period.to || 'fin'}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);

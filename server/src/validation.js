@@ -5,14 +5,14 @@ const optionalText = z.string().trim().max(500).optional().nullable();
 
 export const registerSchema = z.object({
   name: z.string().trim().min(1, 'Nom requis').max(120),
-  email: z.email('Email invalide'),
+  email: z.email('Email invalide').transform((v) => v.trim().toLowerCase()),
   password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
   company_name: z.string().trim().min(1, "Nom de l'entreprise requis").max(200),
   currency: z.string().trim().length(3).toUpperCase().optional(),
 });
 
 export const loginSchema = z.object({
-  email: z.email('Email invalide'),
+  email: z.email('Email invalide').transform((v) => v.trim().toLowerCase()),
   password: z.string().min(1, 'Mot de passe requis'),
 });
 
@@ -64,7 +64,7 @@ export const bulkSchema = z.object({
 
 export const memberSchema = z.object({
   name: z.string().trim().min(1, 'Nom requis').max(120),
-  email: z.email('Email invalide'),
+  email: z.email('Email invalide').transform((v) => v.trim().toLowerCase()),
   password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
   role: z.enum(['member', 'accountant']),
 });

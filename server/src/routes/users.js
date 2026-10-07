@@ -8,34 +8,35 @@ export function userRoutes(db) {
   const ownerOnly = (req, res, next) =>
     req.user.role === 'owner' ? next() : res.status(403).json({ error: 'Réservé au propriétaire' });
 
-  r.get('/', (req, res) => {
+  r.get('/', async (req, res) => {
     res.json(
-      db
-        .prepare('SELECT id, name, email, role, created_at FROM users WHERE company_id = ? ORDER BY id')
-        .all(req.user.company_id),
+      await db.query('SELECT id, name, email, role, created_at FROM users WHERE company_id = $1 ORDER BY id', [
+        req.user.company_id,
+      ]),
     );
   });
 
-  r.post('/', ownerOnly, (req, res) => {
+  r.post('/', ownerOnly, async (req, res) => {
     const input = parse(memberSchema, req.body);
-    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(input.email)) {
+    if (await db.one('SELECT 1 FROM users WHERE email = $1', [input.email])) {
       return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
     }
-    const { lastInsertRowid } = db
-      .prepare('INSERT INTO users (company_id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)')
-      .run(req.user.company_id, input.email, input.name, bcrypt.hashSync(input.password, 10), input.role);
-    res
-      .status(201)
-      .json(db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(lastInsertRowid));
+    const user = await db.one(
+      `INSERT INTO users (company_id, email, name, password_hash, role) VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, email, role, created_at`,
+      [req.user.company_id, input.email, input.name, await bcrypt.hash(input.password, 10), input.role],
+    );
+    res.status(201).json(user);
   });
 
-  r.delete('/:id', ownerOnly, (req, res) => {
+  r.delete('/:id', ownerOnly, async (req, res) => {
     const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(404).json({ error: 'Utilisateur introuvable' });
     if (id === req.user.id) return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
-    const { changes } = db
-      .prepare("DELETE FROM users WHERE id = ? AND company_id = ? AND role != 'owner'")
-      .run(id, req.user.company_id);
-    if (!changes) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    const { count } = await db.run("DELETE FROM users WHERE id = $1 AND company_id = $2 AND role != 'owner'", [
+      id, req.user.company_id,
+    ]);
+    if (!count) return res.status(404).json({ error: 'Utilisateur introuvable' });
     res.status(204).end();
   });
 

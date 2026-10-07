@@ -138,10 +138,19 @@ export const api = {
   bulk: (ids: number[], action: 'paid' | 'unpaid' | 'category' | 'delete', category?: string) =>
     request<{ count: number }>('/documents/bulk', json('POST', { ids, action, category })),
   documentPdf: (id: number) => request<Blob>(`/documents/${id}/pdf`),
-  uploadAttachments: (id: number, files: File[]) => {
-    const form = new FormData();
-    files.forEach((f) => form.append('files', f));
-    return request<Attachment[]>(`/documents/${id}/attachments`, { method: 'POST', body: form });
+  // Un fichier par requête (l'hébergement limite la taille des envois), photos compressées avant envoi.
+  uploadAttachments: async (id: number, files: File[]) => {
+    let result: Attachment[] = [];
+    for (const original of files) {
+      const file = await compressImage(original);
+      if (file.size > MAX_UPLOAD) {
+        throw new ApiError(`« ${file.name} » est trop lourd (4 Mo maximum). Réduisez le PDF ou prenez une photo.`, 413);
+      }
+      const form = new FormData();
+      form.append('files', file);
+      result = await request<Attachment[]>(`/documents/${id}/attachments`, { method: 'POST', body: form });
+    }
+    return result;
   },
   attachments: () => request<AttachmentRow[]>('/documents/attachments'),
   attachment: (docId: number, attId: number) => request<Blob>(`/documents/${docId}/attachments/${attId}`),
@@ -154,6 +163,27 @@ export const api = {
   exportExcel: (params: { from?: string; to?: string; kind?: string; format: string }) =>
     request<Blob>(`/reports/export${qs(params)}`),
 };
+
+const MAX_UPLOAD = 4 * 1024 * 1024;
+
+// Redimensionne les photos (2000 px max, JPEG) : plus léger à envoyer depuis un téléphone.
+export async function compressImage(file: File, maxSide = 2000, quality = 0.82): Promise<File> {
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type) || file.size < 600 * 1024) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/jpeg', quality));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch {
+    return file; // format non décodable par ce navigateur : envoi tel quel
+  }
+}
 
 export function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
