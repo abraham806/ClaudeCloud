@@ -1,0 +1,14 @@
+{
+  "name": "facturo",
+  "private": true,
+  "description": "Facturo — facturation, achats, ventes et export comptable (web + mobile)",
+  "scripts": {
+    "install:all": "npm ci --prefix server && npm ci --prefix web",
+    "build": "npm run build --prefix web",
+    "start": "NODE_ENV=production node server/src/index.js",
+    "dev:api": "npm run dev --prefix server",
+    "dev:web": "npm run dev --prefix web",
+    "test": "npm test --prefix server"
+  },
+  "engines": { "node": ">=20" }
+}
