@@ -37,7 +37,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <span className="brand-text"><strong>Facturo</strong></span>
         </Link>
         <div className="stack" style={{ maxWidth: 440, position: 'relative' }}>
-          <p style={{ fontSize: 34, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1 }}>Fini les carnets de factures et les tickets perdus.</p>
+          <p className="title-font" style={{ fontSize: 34, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1 }}>Fini les carnets de factures et les tickets perdus.</p>
           <p style={{ color: '#a1a1aa' }}>Enregistrez vos achats en photo, éditez vos factures en FCFA et envoyez à votre comptable un fichier Excel propre à la fin du mois.</p>
         </div>
         <span style={{ color: '#71717a', fontSize: 13, position: 'relative' }}>Conçu à Dakar, pour les commerçants et les PME.</span>

@@ -12,7 +12,7 @@
   --ink-text: #ffffff;
   --radius: 12px;
   --sidebar: 248px;
-  font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
   font-size: 15px;
@@ -22,6 +22,10 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
+/* Titres en Geist, textes courants en Inter. */
+h1, h2, h3, .title-font, .brand-text strong, .kpi .value, .lp-price, .lp-step-n, .lp-faq summary {
+  font-family: Geist, Inter, ui-sans-serif, system-ui, sans-serif;
+}
 h1 { font-size: 1.65rem; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
 h2 { font-size: 1.05rem; font-weight: 600; margin: 0; }
 h3 { font-size: 0.95rem; font-weight: 600; margin: 0; }
@@ -50,7 +54,7 @@ img { max-width: 100%; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); font: 500 14px Geist, sans-serif;
+  background: var(--surface); color: var(--text); font: 500 14px Inter, sans-serif;
   cursor: pointer; text-decoration: none; white-space: nowrap;
 }
 .btn:hover { background: var(--subtle); }
@@ -69,7 +73,7 @@ img { max-width: 100%; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); min-width: 0; }
 .input, .field input, .field select, .field textarea {
   height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px;
-  font: 15px Geist, sans-serif; color: var(--text); background: var(--surface); min-width: 0; width: 100%;
+  font: 15px Inter, sans-serif; color: var(--text); background: var(--surface); min-width: 0; width: 100%;
 }
 .field textarea { height: auto; padding: 10px 12px; resize: vertical; }
 .input:focus, .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--ink); outline-offset: -1px; }
@@ -77,19 +81,19 @@ img { max-width: 100%; }
 .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .span-all { grid-column: 1 / -1; }
 .search { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); min-width: 0; }
-.search input { border: 0; outline: 0; font: 14px Geist, sans-serif; flex: 1; background: transparent; color: var(--text); min-width: 0; }
+.search input { border: 0; outline: 0; font: 14px Inter, sans-serif; flex: 1; background: transparent; color: var(--text); min-width: 0; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--ink); width: 16px; height: 16px; }
 
 /* Segments, onglets, puces */
 .seg { display: flex; padding: 3px; background: var(--subtle); border-radius: 10px; gap: 3px; }
-.seg button { flex: 1; height: 34px; border: 0; border-radius: 8px; background: transparent; font: 500 14px Geist, sans-serif; color: var(--text-2); cursor: pointer; white-space: nowrap; padding: 0 12px; }
+.seg button { flex: 1; height: 34px; border: 0; border-radius: 8px; background: transparent; font: 500 14px Inter, sans-serif; color: var(--text-2); cursor: pointer; white-space: nowrap; padding: 0 12px; }
 .seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); font-weight: 600; }
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-.tabs button { height: 38px; padding: 0 12px; border: 0; background: none; font: 500 14px Geist, sans-serif; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.tabs button { height: 38px; padding: 0 12px; border: 0; background: none; font: 500 14px Inter, sans-serif; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
 .tabs button.on { color: var(--text); border-bottom-color: var(--ink); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font: 500 13px Geist, sans-serif; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+.chip { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font: 500 13px Inter, sans-serif; color: var(--text-2); cursor: pointer; white-space: nowrap; }
 .chip.on { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
 
 /* Statuts — distingués par la forme, pas par la couleur */
@@ -167,7 +171,7 @@ table.table { width: 100%; border-collapse: collapse; }
 .table .r { text-align: right; }
 .empty { text-align: center; padding: 40px 16px; color: var(--muted); }
 .bulkbar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--ink); color: var(--ink-text); font-size: 13px; flex-wrap: wrap; }
-.bulkbar button { background: none; border: 0; color: var(--ink-text); font: 500 13px Geist, sans-serif; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.bulkbar button { background: none; border: 0; color: var(--ink-text); font: 500 13px Inter, sans-serif; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
 .bulkbar button:hover { background: #27272a; }
 .pager { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; font-size: 13px; color: var(--muted); gap: 8px; flex-wrap: wrap; }
 
@@ -196,7 +200,7 @@ table.table { width: 100%; border-collapse: collapse; }
 .lines { display: flex; flex-direction: column; gap: 8px; }
 .line { display: grid; grid-template-columns: minmax(0, 1fr) 70px 120px 72px 110px 34px; gap: 8px; align-items: center; }
 .line.head { font-size: 12px; color: var(--muted); }
-.line input { height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font: 14px Geist, sans-serif; min-width: 0; width: 100%; background: var(--surface); color: var(--text); }
+.line input { height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font: 14px Inter, sans-serif; min-width: 0; width: 100%; background: var(--surface); color: var(--text); }
 .totals { display: flex; flex-direction: column; gap: 6px; align-self: flex-end; min-width: 260px; font-size: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
 .totals > div { display: flex; justify-content: space-between; gap: 16px; }
 .totals .grand { font-size: 18px; font-weight: 600; }

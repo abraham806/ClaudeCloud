@@ -264,7 +264,7 @@ function FocusPanel({ doc, cur, onClose }: { doc: Doc; cur: string; onClose: () 
       <div className="between" style={{ alignItems: 'flex-start' }}>
         <div className="stack-sm" style={{ gap: 2 }}>
           <span className="xs muted">{KIND_LABEL[doc.kind]} · {TYPE_LABEL[doc.doc_type]} · {doc.number || 'sans n°'}</span>
-          <strong style={{ fontSize: 17 }}>{doc.party_name}</strong>
+          <strong className="title-font" style={{ fontSize: 17 }}>{doc.party_name}</strong>
         </div>
         <button className="btn ghost icon" aria-label="Fermer l'aperçu" onClick={onClose}><Icon name="x" /></button>
       </div>

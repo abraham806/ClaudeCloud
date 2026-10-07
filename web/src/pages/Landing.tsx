@@ -83,7 +83,7 @@ export default function Landing() {
           <div className="lp-phone">
             <div className="lp-phone-screen">
               <div className="between"><span className="xs muted">Boutique Ndèye</span><span className="avatar" style={{ width: 26, height: 26, fontSize: 10 }}>NF</span></div>
-              <strong style={{ fontSize: 18 }}>Bonjour Ndèye</strong>
+              <strong className="title-font" style={{ fontSize: 18 }}>Bonjour Ndèye</strong>
               <div className="lp-balance">
                 <span className="xs" style={{ color: '#a1a1aa' }}>Solde du mois</span>
                 <strong className="num" style={{ fontSize: 24, fontWeight: 500 }}>1 845 000 F</strong>

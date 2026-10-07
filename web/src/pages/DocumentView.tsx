@@ -98,7 +98,7 @@ export default function DocumentView() {
           { label: 'PDF', icon: 'download' as const, fn: () => run(async () => saveBlob(await api.documentPdf(id), pdfName)) },
           ...(canWrite ? [{ label: 'Modifier', icon: 'edit' as const, fn: () => navigate(`/app/pieces/${id}/modifier`) }] : []),
         ].map((a) => (
-          <button key={a.label} onClick={a.fn} disabled={busy} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 0, font: '500 12px Geist, sans-serif', color: 'inherit', cursor: 'pointer' }}>
+          <button key={a.label} onClick={a.fn} disabled={busy} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 0, font: '500 12px Inter, sans-serif', color: 'inherit', cursor: 'pointer' }}>
             <span style={{ width: 48, height: 48, borderRadius: 999, border: '1px solid var(--border)', display: 'grid', placeItems: 'center' }}><Icon name={a.icon} size={20} /></span>{a.label}
           </button>
         ))}
