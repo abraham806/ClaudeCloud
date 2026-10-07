@@ -11,13 +11,21 @@ import ExcelJS from 'exceljs';
 // ---------------------------------------------------------------------------
 
 const KIND_LABEL = { purchase: 'Achat', sale: 'Vente' };
-const TYPE_LABEL = { invoice: 'Facture', receipt: 'Reçu' };
+const TYPE_LABEL = { invoice: 'Facture', receipt: 'Reçu', quote: 'Devis' };
 const STATUS_LABEL = { paid: 'Payé', unpaid: 'Non payé' };
 
-// Comptes par défaut (Plan Comptable Général français). À adapter (ex. SYSCOHADA).
-export const DEFAULT_ACCOUNTS = {
-  purchase: { journal: 'ACH', expense: '607000', vat: '445660', party: '401000' },
-  sale: { journal: 'VTE', revenue: '706000', vat: '445710', party: '411000' },
+// Comptes par défaut selon le plan comptable de l'entreprise.
+// SYSCOHADA (Sénégal / zone OHADA) : 601 achats, 4452 TVA récupérable, 401 fournisseurs,
+// 701 ventes, 4431 TVA facturée, 411 clients.
+export const ACCOUNTS = {
+  syscohada: {
+    purchase: { journal: 'ACH', expense: '601000', vat: '445200', party: '401000' },
+    sale: { journal: 'VTE', revenue: '701000', vat: '443100', party: '411000' },
+  },
+  pcg: {
+    purchase: { journal: 'ACH', expense: '607000', vat: '445660', party: '401000' },
+    sale: { journal: 'VTE', revenue: '706000', vat: '445710', party: '411000' },
+  },
 };
 
 const moneyFmt = '#,##0.00';
@@ -98,7 +106,8 @@ function standardFormat(wb, documents, company) {
   styleHeader(summary);
 }
 
-function ecrituresFormat(wb, documents) {
+function ecrituresFormat(wb, documents, company) {
+  const plan = ACCOUNTS[company.accounting_plan] || ACCOUNTS.syscohada;
   const sheet = wb.addWorksheet('Ecritures');
   sheet.columns = [
     { header: 'Journal', key: 'journal', width: 9 },
@@ -110,7 +119,7 @@ function ecrituresFormat(wb, documents) {
     { header: 'Crédit', key: 'credit', width: 14, style: { numFmt: moneyFmt } },
   ];
   for (const d of documents) {
-    const acc = DEFAULT_ACCOUNTS[d.kind];
+    const acc = plan[d.kind];
     const base = { journal: acc.journal, date: toDate(d.date), number: d.number || `ID${d.id}` };
     const label = `${TYPE_LABEL[d.doc_type]} ${d.party_name}`.slice(0, 60);
     const rows =

@@ -11,6 +11,7 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR || path.join(root, 'data', 'uploads'),
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB || 10) * 1024 * 1024,
   corsOrigin: process.env.CORS_ORIGIN || '*',
+  webDist: process.env.WEB_DIST || path.join(root, '..', 'web', 'dist'),
 };
 
 if (process.env.NODE_ENV === 'production' && config.jwtSecret === 'dev-secret-change-me') {

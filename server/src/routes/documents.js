@@ -5,9 +5,10 @@ import { Router } from 'express';
 import multer from 'multer';
 import { requireWriter } from '../auth.js';
 import { config } from '../config.js';
-import { documentSchema, parse } from '../validation.js';
+import { bulkSchema, documentSchema, parse, statusSchema } from '../validation.js';
 import {
-  createDocument, deleteDocument, getDocument, listDocuments, updateDocument,
+  convertQuote, createDocument, deleteDocument, getDocument, listAttachments, listDocuments, setCategory, setStatus,
+  updateDocument,
 } from '../services/documents.js';
 import { renderDocumentPdf } from '../services/pdf.js';
 
@@ -36,11 +37,44 @@ export function documentRoutes(db) {
 
   const id = (req) => Number(req.params.id);
 
+  const removeFiles = (files) => {
+    for (const f of files) fs.rm(path.join(config.uploadDir, f), { force: true }, () => {});
+  };
+
   r.get('/', (req, res) => {
-    const { from, to, kind, q, status } = req.query;
+    const { from, to, kind, q, status, doc_type, party } = req.query;
     const limit = Math.min(Number(req.query.limit) || 50, 200);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
-    res.json(listDocuments(db, req.user.company_id, { from, to, kind, q, status, limit, offset }));
+    res.json(
+      listDocuments(db, req.user.company_id, {
+        from, to, kind, q, status, doc_type, party,
+        missing: req.query.missing === '1',
+        overdue: req.query.overdue === '1',
+        limit, offset,
+      }),
+    );
+  });
+
+  r.get('/attachments', (req, res) => {
+    res.json(listAttachments(db, req.user.company_id));
+  });
+
+  // Actions groupées : marquer payé / non payé, changer la catégorie, supprimer.
+  r.post('/bulk', requireWriter, (req, res) => {
+    const { ids, action, category } = parse(bulkSchema, req.body);
+    let count = 0;
+    if (action === 'paid' || action === 'unpaid') count = setStatus(db, req.user.company_id, ids, action);
+    else if (action === 'category') count = setCategory(db, req.user.company_id, ids, category);
+    else {
+      for (const id of ids) {
+        const files = deleteDocument(db, req.user.company_id, id);
+        if (files) {
+          count += 1;
+          removeFiles(files);
+        }
+      }
+    }
+    res.json({ count });
   });
 
   r.post('/', requireWriter, (req, res) => {
@@ -62,8 +96,20 @@ export function documentRoutes(db) {
   r.delete('/:id', requireWriter, (req, res) => {
     const files = deleteDocument(db, req.user.company_id, id(req));
     if (!files) return notFound(res);
-    for (const f of files) fs.rm(path.join(config.uploadDir, f), { force: true }, () => {});
+    removeFiles(files);
     res.status(204).end();
+  });
+
+  r.patch('/:id/status', requireWriter, (req, res) => {
+    const { status } = parse(statusSchema, req.body);
+    if (!setStatus(db, req.user.company_id, [id(req)], status)) return notFound(res);
+    res.json(getDocument(db, req.user.company_id, id(req)));
+  });
+
+  r.post('/:id/convert', requireWriter, (req, res) => {
+    const doc = convertQuote(db, req.user, id(req));
+    if (!doc) return res.status(400).json({ error: 'Seul un devis peut être transformé en facture' });
+    res.status(201).json(doc);
   });
 
   // Facture / reçu imprimable.

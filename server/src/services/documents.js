@@ -1,6 +1,8 @@
 import { computeTotals, toCents, fromCents } from './amounts.js';
 
-const PREFIXES = { 'sale:invoice': 'FAC', 'sale:receipt': 'REC' };
+const PREFIXES = { 'sale:invoice': 'FAC', 'sale:receipt': 'REC', 'sale:quote': 'DEV' };
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 function nextNumber(db, companyId, prefix, date) {
   const year = Number(date.slice(0, 4));
@@ -18,6 +20,7 @@ function nextNumber(db, companyId, prefix, date) {
 function serializeDocument(doc, lines, attachments) {
   return {
     ...doc,
+    overdue: doc.status === 'unpaid' && doc.doc_type !== 'quote' && !!doc.due_date && doc.due_date < todayIso(),
     total_ht: fromCents(doc.total_ht),
     total_tva: fromCents(doc.total_tva),
     total_ttc: fromCents(doc.total_ttc),
@@ -116,14 +119,20 @@ export function getDocument(db, companyId, id) {
   return serializeDocument(doc, lines, attachments);
 }
 
-export function listDocuments(db, companyId, { from, to, kind, q, status, limit = 50, offset = 0 } = {}) {
+export function listDocuments(
+  db, companyId, { from, to, kind, q, status, doc_type, missing, overdue, party, limit = 50, offset = 0 } = {},
+) {
   const where = ['d.company_id = @companyId'];
   if (from) where.push('d.date >= @from');
   if (to) where.push('d.date <= @to');
   if (kind) where.push('d.kind = @kind');
   if (status) where.push('d.status = @status');
+  if (doc_type) where.push('d.doc_type = @doc_type');
+  if (party) where.push('d.party_name = @party');
+  if (missing) where.push("d.doc_type != 'quote' AND NOT EXISTS (SELECT 1 FROM attachments a WHERE a.document_id = d.id)");
+  if (overdue) where.push("d.status = 'unpaid' AND d.doc_type != 'quote' AND d.due_date < @today");
   if (q) where.push("(d.party_name LIKE @q OR d.number LIKE @q OR d.category LIKE @q OR d.notes LIKE @q)");
-  const params = { companyId, from, to, kind, status, q: q && `%${q}%`, limit, offset };
+  const params = { companyId, from, to, kind, status, doc_type, party, today: todayIso(), q: q && `%${q}%`, limit, offset };
   const sqlWhere = where.join(' AND ');
   const rows = db
     .prepare(
@@ -131,13 +140,15 @@ export function listDocuments(db, companyId, { from, to, kind, q, status, limit 
        FROM documents d WHERE ${sqlWhere} ORDER BY d.date DESC, d.id DESC LIMIT @limit OFFSET @offset`,
     )
     .all(params);
-  const { total } = db.prepare(`SELECT COUNT(*) AS total FROM documents d WHERE ${sqlWhere}`).get(params);
-  return { items: rows.map((r) => serializeDocument(r)), total };
+  const agg = db
+    .prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(total_ttc), 0) AS sum_ttc FROM documents d WHERE ${sqlWhere}`)
+    .get(params);
+  return { items: rows.map((r) => serializeDocument(r)), total: agg.total, sum_ttc: fromCents(agg.sum_ttc) };
 }
 
 // Toutes les pièces d'une période avec leurs lignes (pour l'export Excel).
 export function documentsForExport(db, companyId, { from, to, kind } = {}) {
-  const where = ['company_id = @companyId'];
+  const where = ["company_id = @companyId", "doc_type != 'quote'"];
   if (from) where.push('date >= @from');
   if (to) where.push('date <= @to');
   if (kind) where.push('kind = @kind');
@@ -154,6 +165,67 @@ export function deleteDocument(db, companyId, id) {
     .all(id, companyId);
   const { changes } = db.prepare('DELETE FROM documents WHERE id = ? AND company_id = ?').run(id, companyId);
   return changes ? attachments.map((a) => a.stored_name) : null;
+}
+
+export function setStatus(db, companyId, ids, status) {
+  const stmt = db.prepare(
+    "UPDATE documents SET status = ?, updated_at = datetime('now') WHERE id = ? AND company_id = ?",
+  );
+  return db.transaction(() => ids.reduce((n, id) => n + stmt.run(status, id, companyId).changes, 0))();
+}
+
+export function setCategory(db, companyId, ids, category) {
+  const stmt = db.prepare(
+    "UPDATE documents SET category = ?, updated_at = datetime('now') WHERE id = ? AND company_id = ?",
+  );
+  return db.transaction(() => ids.reduce((n, id) => n + stmt.run(category || null, id, companyId).changes, 0))();
+}
+
+// Transforme un devis en facture (nouvelle pièce, le devis reste dans l'historique).
+export function convertQuote(db, user, id) {
+  const quote = getDocument(db, user.company_id, id);
+  if (!quote || quote.doc_type !== 'quote') return null;
+  return createDocument(db, user, {
+    ...quote,
+    doc_type: 'invoice',
+    number: null,
+    date: todayIso(),
+    status: 'unpaid',
+    notes: [quote.notes, `Selon devis ${quote.number}`].filter(Boolean).join('\n'),
+  });
+}
+
+// Clients et fournisseurs, déduits des pièces saisies.
+export function listParties(db, companyId, kind) {
+  const rows = db
+    .prepare(
+      `SELECT party_name AS name, kind,
+         (SELECT d2.party_address FROM documents d2 WHERE d2.company_id = d.company_id AND d2.party_name = d.party_name
+            AND d2.party_address IS NOT NULL ORDER BY d2.date DESC LIMIT 1) AS address,
+         (SELECT d2.party_tax_id FROM documents d2 WHERE d2.company_id = d.company_id AND d2.party_name = d.party_name
+            AND d2.party_tax_id IS NOT NULL ORDER BY d2.date DESC LIMIT 1) AS tax_id,
+         COUNT(*) AS count,
+         SUM(CASE WHEN doc_type != 'quote' THEN total_ttc ELSE 0 END) AS total,
+         SUM(CASE WHEN status = 'unpaid' AND doc_type != 'quote' THEN total_ttc ELSE 0 END) AS unpaid,
+         MAX(date) AS last_date
+       FROM documents d WHERE company_id = @companyId ${kind ? 'AND kind = @kind' : ''}
+       GROUP BY party_name, kind ORDER BY last_date DESC`,
+    )
+    .all({ companyId, kind });
+  return rows.map((r) => ({ ...r, total: fromCents(r.total), unpaid: fromCents(r.unpaid) }));
+}
+
+// Tous les justificatifs, avec la pièce associée.
+export function listAttachments(db, companyId) {
+  return db
+    .prepare(
+      `SELECT a.id, a.document_id, a.original_name, a.mime_type, a.size, a.created_at,
+         d.kind, d.doc_type, d.number, d.date, d.party_name, d.total_ttc
+       FROM attachments a JOIN documents d ON d.id = a.document_id
+       WHERE a.company_id = ? ORDER BY d.date DESC, a.id DESC LIMIT 500`,
+    )
+    .all(companyId)
+    .map((a) => ({ ...a, total_ttc: fromCents(a.total_ttc) }));
 }
 
 function nullify(input) {

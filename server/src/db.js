@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS companies (
   phone         TEXT,
   email         TEXT,
   tax_id        TEXT,
-  currency      TEXT NOT NULL DEFAULT 'EUR',
+  rccm          TEXT,
+  currency      TEXT NOT NULL DEFAULT 'XOF',
+  default_vat   REAL NOT NULL DEFAULT 18,
+  accounting_plan TEXT NOT NULL DEFAULT 'syscohada' CHECK (accounting_plan IN ('syscohada', 'pcg')),
   invoice_footer TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -25,13 +28,14 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Un "document" est une pièce comptable : achat ou vente, facture ou reçu.
+-- Un "document" est une pièce : achat ou vente ; facture, reçu ou devis (les devis
+-- ne comptent ni dans les statistiques ni dans les exports comptables).
 -- Les montants sont stockés en centimes (entiers) pour éviter les erreurs d'arrondi.
 CREATE TABLE IF NOT EXISTS documents (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   company_id     INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   kind           TEXT NOT NULL CHECK (kind IN ('purchase', 'sale')),
-  doc_type       TEXT NOT NULL CHECK (doc_type IN ('invoice', 'receipt')),
+  doc_type       TEXT NOT NULL CHECK (doc_type IN ('invoice', 'receipt', 'quote')),
   number         TEXT,
   date           TEXT NOT NULL,
   due_date       TEXT,
@@ -72,6 +76,19 @@ CREATE TABLE IF NOT EXISTS attachments (
   mime_type     TEXT NOT NULL,
   size          INTEGER NOT NULL,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Historique des exports envoyés au comptable.
+CREATE TABLE IF NOT EXISTS exports (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  format     TEXT NOT NULL,
+  date_from  TEXT,
+  date_to    TEXT,
+  kind       TEXT,
+  doc_count  INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Compteurs de numérotation (FAC-2026-0001, REC-2026-0001...) par entreprise et par année.

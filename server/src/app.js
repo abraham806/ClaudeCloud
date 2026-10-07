@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
@@ -6,6 +8,7 @@ import { authRoutes } from './routes/auth.js';
 import { companyRoutes } from './routes/company.js';
 import { documentRoutes } from './routes/documents.js';
 import { reportRoutes } from './routes/reports.js';
+import { userRoutes } from './routes/users.js';
 
 export function createApp(db) {
   const app = express();
@@ -17,8 +20,15 @@ export function createApp(db) {
   app.use('/api/company', requireAuth, companyRoutes(db));
   app.use('/api/documents', requireAuth, documentRoutes(db));
   app.use('/api/reports', requireAuth, reportRoutes(db));
+  app.use('/api/users', requireAuth, userRoutes(db));
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Route inconnue' }));
+
+  // En production, le même serveur sert l'application web compilée (web/dist).
+  if (config.webDist && fs.existsSync(path.join(config.webDist, 'index.html'))) {
+    app.use(express.static(config.webDist, { index: false, maxAge: '1h' }));
+    app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(config.webDist, 'index.html')));
+  }
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {

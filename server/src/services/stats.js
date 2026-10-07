@@ -2,7 +2,7 @@ import { fromCents } from './amounts.js';
 
 // Statistiques du tableau de bord sur une période.
 export function getStats(db, companyId, { from, to }) {
-  const where = ['company_id = @companyId'];
+  const where = ["company_id = @companyId", "doc_type != 'quote'"];
   if (from) where.push('date >= @from');
   if (to) where.push('date <= @to');
   const sqlWhere = where.join(' AND ');
@@ -55,8 +55,25 @@ export function getStats(db, companyId, { from, to }) {
     .all(params)
     .map((s) => ({ name: s.name, total: fromCents(s.total), count: s.count }));
 
+  // Points d'attention (indépendants de la période).
+  const today = new Date().toISOString().slice(0, 10);
+  const todo = db
+    .prepare(
+      `SELECT
+         SUM(CASE WHEN kind = 'purchase' AND NOT EXISTS (SELECT 1 FROM attachments a WHERE a.document_id = d.id) THEN 1 ELSE 0 END) AS missing,
+         SUM(CASE WHEN kind = 'sale' AND status = 'unpaid' AND due_date < @today THEN 1 ELSE 0 END) AS overdue_count,
+         SUM(CASE WHEN kind = 'sale' AND status = 'unpaid' AND due_date < @today THEN total_ttc ELSE 0 END) AS overdue_amount
+       FROM documents d WHERE company_id = @companyId AND doc_type != 'quote'`,
+    )
+    .get({ companyId, today });
+
   return {
     period: { from: from || null, to: to || null },
+    todo: {
+      missing_attachments: todo.missing || 0,
+      overdue_count: todo.overdue_count || 0,
+      overdue_amount: fromCents(todo.overdue_amount || 0),
+    },
     purchases,
     sales,
     balance: fromCents(Math.round((sales.total_ttc - purchases.total_ttc) * 100)),

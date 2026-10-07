@@ -22,7 +22,10 @@ export const companySchema = z.object({
   phone: optionalText,
   email: optionalText,
   tax_id: optionalText,
+  rccm: optionalText,
   currency: z.string().trim().length(3).toUpperCase(),
+  default_vat: z.coerce.number().min(0).max(100),
+  accounting_plan: z.enum(['syscohada', 'pcg']),
   invoice_footer: optionalText,
 });
 
@@ -35,7 +38,7 @@ export const lineSchema = z.object({
 
 export const documentSchema = z.object({
   kind: z.enum(['purchase', 'sale']),
-  doc_type: z.enum(['invoice', 'receipt']).default('invoice'),
+  doc_type: z.enum(['invoice', 'receipt', 'quote']).default('invoice'),
   number: optionalText,
   date: isoDate,
   due_date: isoDate.optional().nullable(),
@@ -47,11 +50,33 @@ export const documentSchema = z.object({
   status: z.enum(['paid', 'unpaid']).default('paid'),
   notes: z.string().max(2000).optional().nullable(),
   lines: z.array(lineSchema).min(1, 'Au moins une ligne est requise').max(200),
+}).refine((d) => !(d.kind === 'purchase' && d.doc_type === 'quote'), {
+  message: 'Un devis est forcément une vente',
+});
+
+export const statusSchema = z.object({ status: z.enum(['paid', 'unpaid']) });
+
+export const bulkSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(500),
+  action: z.enum(['paid', 'unpaid', 'category', 'delete']),
+  category: z.string().trim().max(500).optional(),
+});
+
+export const memberSchema = z.object({
+  name: z.string().trim().min(1, 'Nom requis').max(120),
+  email: z.email('Email invalide'),
+  password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
+  role: z.enum(['member', 'accountant']),
+});
+
+export const passwordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password: z.string().min(8, 'Mot de passe : 8 caractères minimum').max(200),
 });
 
 export const periodSchema = z.object({
-  from: isoDate.optional(),
-  to: isoDate.optional(),
+  from: z.union([isoDate, z.literal('')]).optional().transform((v) => v || undefined),
+  to: z.union([isoDate, z.literal('')]).optional().transform((v) => v || undefined),
   kind: z.enum(['purchase', 'sale']).optional(),
 });
 

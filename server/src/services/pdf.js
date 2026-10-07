@@ -5,6 +5,7 @@ const TITLES = {
   'sale:receipt': 'REÇU',
   'purchase:invoice': "FACTURE D'ACHAT",
   'purchase:receipt': "REÇU D'ACHAT",
+  'sale:quote': 'DEVIS',
 };
 
 function money(value, currency) {
@@ -28,9 +29,13 @@ export function renderDocumentPdf(doc, company, stream) {
   const issuer = doc.kind === 'sale' ? company : { name: doc.party_name, address: doc.party_address, tax_id: doc.party_tax_id };
   const recipient = doc.kind === 'sale' ? { name: doc.party_name, address: doc.party_address, tax_id: doc.party_tax_id } : company;
 
+  const taxLabel = company.accounting_plan === 'pcg' ? 'N° TVA' : 'NINEA';
   pdf.fontSize(18).font('Helvetica-Bold').text(issuer.name || '', left, 50);
   pdf.fontSize(9).font('Helvetica');
-  for (const line of [issuer.address, issuer.phone, issuer.email, issuer.tax_id && `N° fiscal : ${issuer.tax_id}`]) {
+  for (const line of [
+    issuer.address, issuer.phone, issuer.email,
+    issuer.tax_id && `${taxLabel} : ${issuer.tax_id}`, issuer.rccm && `RCCM : ${issuer.rccm}`,
+  ]) {
     if (line) pdf.text(line);
   }
 
@@ -47,7 +52,7 @@ export function renderDocumentPdf(doc, company, stream) {
   pdf.fontSize(11).fillColor('#000000').font('Helvetica-Bold').text(recipient.name || '', 310, boxTop + 20, { width: right - 320 });
   pdf.fontSize(9).font('Helvetica');
   if (recipient.address) pdf.text(recipient.address, { width: right - 320 });
-  if (recipient.tax_id) pdf.text(`N° fiscal : ${recipient.tax_id}`, { width: right - 320 });
+  if (recipient.tax_id) pdf.text(`${taxLabel} : ${recipient.tax_id}`, { width: right - 320 });
 
   // Tableau des lignes
   const cols = [
@@ -93,7 +98,8 @@ export function renderDocumentPdf(doc, company, stream) {
   pdf.font('Helvetica').fontSize(9);
   y += 10;
   if (doc.payment_method) pdf.text(`Mode de paiement : ${doc.payment_method}`, left, y);
-  pdf.text(`Statut : ${doc.status === 'paid' ? 'Payé' : 'En attente de paiement'}`, left);
+  if (doc.doc_type === 'quote') pdf.text('Devis valable 30 jours.', left);
+  else pdf.text(`Statut : ${doc.status === 'paid' ? 'Payé' : 'En attente de paiement'}`, left);
   if (doc.notes) pdf.moveDown().text(doc.notes, left, pdf.y, { width: right - left });
 
   if (company.invoice_footer) {
