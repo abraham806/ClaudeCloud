@@ -34,6 +34,8 @@ function getDb() {
     return {
       ...wrap((text, values) => lite.query(text, values)),
       tx: (fn) => lite.transaction((t) => fn(wrap((text, values) => t.query(text, values)))),
+      // Force l'écriture dans IndexedDB (sinon une fermeture rapide de l'onglet peut perdre la saisie).
+      sync: () => lite.syncToFs(),
     };
   })();
   return dbPromise;
@@ -310,7 +312,9 @@ export async function handle(path, init = {}, headers = new Headers()) {
       form: init.body instanceof FormData ? init.body : undefined,
       user: route.auth ? await currentUser(db, headers) : null,
     };
-    return await route.handler(ctx);
+    const res = await route.handler(ctx);
+    if (method !== 'GET') await db.sync();
+    return res;
   } catch (e) {
     if (!e.status) console.error(e);
     return json({ error: e.status ? e.message : 'Erreur interne' }, e.status || 500);

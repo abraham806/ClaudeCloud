@@ -217,7 +217,7 @@ export default function Documents({ kind }: { kind?: Kind }) {
                     <span className="t">
                       <span>{d.party_name}</span>
                       <span className="xs muted row" style={{ gap: 6 }}>
-                        {d.category || TYPE_LABEL[d.doc_type]}{d.attachment_count ? ' · photo jointe' : ''}
+                        {d.doc_type === 'quote' ? d.number : (d.category || TYPE_LABEL[d.doc_type])}{d.attachment_count ? ' · photo jointe' : ''}
                         {(d.status === 'unpaid' || d.doc_type === 'quote') && <StatusPill doc={d} />}
                       </span>
                     </span>

@@ -116,21 +116,23 @@ export default function DocumentView() {
           <div className="card flush">
             <div className="table-wrap">
               <table className="table">
-                <thead><tr><th>Désignation</th><th className="r">Qté</th><th className="r">P.U. HT</th><th className="r">TVA</th><th className="r">Total HT</th></tr></thead>
+                <thead><tr><th>Désignation</th><th className="r">Qté</th><th className="r hide-mobile">P.U. HT</th><th className="r hide-mobile">TVA</th><th className="r">Total HT</th></tr></thead>
                 <tbody>
                   {doc.lines?.map((l) => (
                     <tr key={l.id}>
-                      <td style={{ whiteSpace: 'normal' }}>{l.description}</td><td className="r num">{l.quantity}</td><td className="r num">{money(l.unit_price, cur)}</td>
-                      <td className="r num">{l.vat_rate} %</td><td className="r num">{money(l.total_ht || 0, cur)}</td>
+                      <td style={{ whiteSpace: 'normal' }}>{l.description}</td><td className="r num">{l.quantity}</td><td className="r num hide-mobile">{money(l.unit_price, cur)}</td>
+                      <td className="r num hide-mobile">{l.vat_rate} %</td><td className="r num">{money(l.total_ht || 0, cur)}</td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr><td colSpan={4} className="muted" style={{ fontWeight: 400 }}>Total HT</td><td className="r num">{money(doc.total_ht, cur)}</td></tr>
-                  <tr><td colSpan={4} className="muted" style={{ fontWeight: 400 }}>TVA</td><td className="r num">{money(doc.total_tva, cur)}</td></tr>
-                  <tr><td colSpan={4}>Total TTC</td><td className="r num" style={{ fontSize: 16 }}>{money(doc.total_ttc, cur)}</td></tr>
-                </tfoot>
               </table>
+            </div>
+            <div style={{ padding: 14 }}>
+              <div className="totals">
+                <div><span className="muted">Total HT</span><span className="num">{money(doc.total_ht, cur)}</span></div>
+                <div><span className="muted">TVA</span><span className="num">{money(doc.total_tva, cur)}</span></div>
+                <div className="grand"><span>Total TTC</span><span className="num-title">{money(doc.total_ttc, cur)}</span></div>
+              </div>
             </div>
           </div>
           {pdfUrl && (

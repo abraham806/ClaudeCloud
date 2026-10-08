@@ -6,6 +6,15 @@ export const money = (value: number, currency = 'XOF') => {
   }
 };
 
+// Montant abrégé pour les tuiles : 18,4 M F CFA.
+export const compactMoney = (value: number, currency = 'XOF') => {
+  try {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value || 0);
+  } catch {
+    return money(value, currency);
+  }
+};
+
 export const signedMoney = (value: number, kind: 'purchase' | 'sale', currency?: string) =>
   `${kind === 'sale' ? '+' : '−'} ${money(value, currency)}`;
 

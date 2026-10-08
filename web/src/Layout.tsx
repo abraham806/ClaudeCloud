@@ -3,20 +3,19 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { api, DEMO } from './api';
 import { useAuth } from './auth';
 import { initials } from './format';
-import { Icon, type IconName } from './icons';
+import { Icon } from './icons';
 
-const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' }[] = [
-  { section: 'Général', to: '/app', label: 'Tableau de bord', icon: 'dashboard', end: true },
-  { to: '/app/achats', label: 'Achats', icon: 'receipt' },
-  { to: '/app/ventes', label: 'Ventes et devis', icon: 'trending' },
-  { to: '/app/justificatifs', label: 'Justificatifs', icon: 'clip', badge: 'missing' },
-  { to: '/app/tiers', label: 'Clients & fournisseurs', icon: 'users' },
-  { section: 'Comptabilité', to: '/app/export', label: 'Export comptable', icon: 'sheet' },
-  { to: '/app/parametres', label: 'Paramètres', icon: 'settings' },
+const NAV: { to: string; label: string; end?: boolean; badge?: boolean }[] = [
+  { to: '/app', label: 'Aperçu', end: true },
+  { to: '/app/ventes', label: 'Ventes' },
+  { to: '/app/achats', label: 'Achats' },
+  { to: '/app/justificatifs', label: 'Justificatifs', badge: true },
+  { to: '/app/tiers', label: 'Tiers' },
+  { to: '/app/export', label: 'Export' },
 ];
 
 export default function Layout() {
-  const { user, company, signOut } = useAuth();
+  const { user, company } = useAuth();
   const location = useLocation();
   const [missing, setMissing] = useState(0);
   const [sheet, setSheet] = useState(false);
@@ -30,75 +29,56 @@ export default function Layout() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <Link to="/app" className="brand">
-          <span className="logo">F</span>
-          <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
-        </Link>
-        <nav className="nav" aria-label="Navigation principale">
-          {NAV.map((n) => (
-            <div key={n.to} style={{ display: 'contents' }}>
-              {n.section && <span className="eyebrow">{n.section}</span>}
-              <NavLink to={n.to} end={n.end}>
-                <Icon name={n.icon} />
+      <header className="topbar">
+        <div className="row" style={{ gap: 20, flexWrap: 'nowrap', minWidth: 0 }}>
+          <Link to="/app" className="brand">
+            <span className="brand-text"><strong>facturo<i>.</i></strong><span>{company?.name}</span></span>
+          </Link>
+          <nav className="topnav" aria-label="Navigation principale">
+            {NAV.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.end}>
                 {n.label}
-                {n.badge === 'missing' && missing > 0 && <span className="pill unpaid count" style={{ height: 20 }}>{missing}</span>}
+                {n.badge && missing > 0 && <span className="count">{missing}</span>}
               </NavLink>
-            </div>
-          ))}
-        </nav>
-        {missing > 0 && (
-          <Link to="/app/justificatifs" className="closing" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <strong className="small">Avant l'envoi au comptable</strong>
-            <span className="xs muted">{missing} achat{missing > 1 ? 's' : ''} sans justificatif. Ajoutez la photo ou le PDF.</span>
-          </Link>
-        )}
-        <div className="user" style={missing > 0 ? undefined : { marginTop: 'auto' }}>
-          <span className="avatar">{initials(user?.name || '')}</span>
-          <span className="grow" style={{ display: 'flex', flexDirection: 'column' }}>
-            <strong>{user?.name}</strong>
-            <span className="xs muted">{{ owner: 'Propriétaire', member: 'Collaborateur', accountant: 'Comptable' }[user?.role || 'owner']}</span>
-          </span>
-          <button className="btn ghost icon" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><Icon name="logout" /></button>
+            ))}
+          </nav>
         </div>
-      </aside>
+        <div className="row" style={{ flexWrap: 'nowrap' }}>
+          {canWrite && (
+            <div className="top-actions">
+              <Link className="btn" to="/app/pieces/nouvelle?kind=purchase&type=receipt&photo=1"><Icon name="camera" />Scanner un reçu</Link>
+              <Link className="btn dark" to="/app/pieces/nouvelle?kind=sale"><Icon name="plus" />Facture</Link>
+            </div>
+          )}
+          <Link to="/app/parametres" className="avatar" aria-label="Compte et paramètres">{initials(user?.name || '')}</Link>
+        </div>
+      </header>
 
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <header className="mobile-top">
-          <Link to="/app" className="brand" style={{ padding: 0 }}>
-            <span className="logo">F</span>
-            <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
-          </Link>
-          <Link to="/app/parametres" className="avatar" aria-label="Compte" style={{ textDecoration: 'none', color: 'inherit' }}>
-            {initials(user?.name || '')}
-          </Link>
-        </header>
-        <main className="main">
-          {DEMO && <DemoBanner />}
-          <Outlet />
-        </main>
-      </div>
+      <main className="main">
+        {DEMO && <DemoBanner />}
+        <Outlet />
+      </main>
 
       <nav className="tabbar" aria-label="Navigation mobile">
-        <NavLink to="/app" end><Icon name="home" size={22} />Accueil</NavLink>
-        <NavLink to="/app/pieces"><Icon name="list" size={22} />Pièces</NavLink>
+        <NavLink to="/app" end><Icon name="home" size={22} stroke={2.2} />Aperçu</NavLink>
+        <NavLink to="/app/pieces"><Icon name="list" size={22} stroke={2.2} />Pièces</NavLink>
         {canWrite ? (
-          <button className="fab" aria-label="Ajouter une pièce" onClick={() => setSheet(true)}><Icon name="plus" size={26} stroke={2.4} /></button>
+          <button className="fab" aria-label="Ajouter une pièce" onClick={() => setSheet(true)}><Icon name="plus" size={26} stroke={2.6} /></button>
         ) : <span style={{ width: 58 }} />}
-        <NavLink to="/app/export"><Icon name="sheet" size={22} />Export</NavLink>
-        <NavLink to="/app/parametres"><Icon name="user" size={22} />Compte</NavLink>
+        <NavLink to="/app/export"><Icon name="download" size={22} stroke={2.2} />Export</NavLink>
+        <NavLink to="/app/parametres"><Icon name="user" size={22} stroke={2.2} />Compte</NavLink>
       </nav>
 
       {sheet && (
         <div className="sheet-backdrop" onClick={() => setSheet(false)}>
           <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Nouvelle pièce">
-            <div className="between" style={{ marginBottom: 4 }}>
-              <h2>Nouvelle pièce</h2>
-              <button className="btn ghost icon" onClick={() => setSheet(false)} aria-label="Fermer"><Icon name="x" /></button>
+            <div className="between" style={{ marginBottom: 4, padding: '0 4px' }}>
+              <h2 style={{ fontSize: 22 }}>Nouvelle pièce</h2>
+              <button className="btn icon" onClick={() => setSheet(false)} aria-label="Fermer"><Icon name="x" /></button>
             </div>
             <Link className="primary" to="/app/pieces/nouvelle?kind=purchase&type=receipt&photo=1">
               <span className="ic"><Icon name="camera" size={20} /></span>
-              <span className="stack-sm" style={{ gap: 0 }}>Photographier un reçu<span className="xs muted">Achat ou dépense avec justificatif</span></span>
+              <span className="stack-sm" style={{ gap: 0 }}>Photographier un reçu<span className="xs" style={{ fontWeight: 500 }}>Achat ou dépense avec justificatif</span></span>
             </Link>
             <Link to="/app/pieces/nouvelle?kind=purchase"><span className="ic"><Icon name="receipt" size={20} /></span>Saisir un achat</Link>
             <Link to="/app/pieces/nouvelle?kind=sale"><span className="ic"><Icon name="filePlus" size={20} /></span>Facturer un client</Link>
@@ -135,7 +115,7 @@ function DemoBanner() {
     signOut();
   };
   return (
-    <div className="between" style={{ padding: '10px 14px', border: '1px dashed var(--ink)', borderRadius: 10, background: 'var(--surface)' }}>
+    <div className="between" style={{ padding: '12px 16px', borderRadius: 18, background: 'var(--lavender)' }}>
       <span className="small"><strong>Version de démonstration.</strong> <span className="muted">Vos données restent uniquement dans ce navigateur.</span>
         {error && <span className="demo-error"> — {error}</span>}</span>
       {user?.role !== 'accountant' && (
