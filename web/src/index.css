@@ -24,6 +24,8 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
+/* Les champs et boutons prennent la police du site (pas celle du navigateur). */
+button, input, select, textarea { font-family: inherit; }
 /* Hiérarchie des titres en Geist : 700 pour la page, 600 pour les sections, 500 pour les sous-titres. */
 h1 { font-size: 1.65rem; font-weight: 700; letter-spacing: -0.03em; margin: 0; }
 h2 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
@@ -31,7 +33,7 @@ h3 { font-size: 0.95rem; font-weight: 500; margin: 0; }
 .kpi .value { font-weight: 600; }
 p { margin: 0; }
 
-/* Paragraphes et petits textes en Inter (les montants restent en Geist Mono, défini juste après). */
+/* Paragraphes et petits textes en Inter (les montants restent en Geist, défini juste après). */
 p, .small, .xs, .muted, .sub, .error, .empty, .lp-lead, .field textarea, .mitem .t span + span {
   font-family: var(--font-text);
 }
@@ -39,7 +41,7 @@ p, .small, .xs, .muted, .sub, .error, .empty, .lp-lead, .field textarea, .mitem 
 a { color: var(--text); }
 img { max-width: 100%; }
 
-.num { font-family: 'Geist Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.num { font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
 .xs { font-size: 0.75rem; }
