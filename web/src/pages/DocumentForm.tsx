@@ -171,7 +171,7 @@ export default function DocumentForm() {
             </div>
 
             {!sale && (
-              <div className="stack-sm" style={{ padding: 14, border: `1.5px dashed ${wantsPhoto && !files.length ? 'var(--ink)' : 'var(--border-strong)'}`, borderRadius: 12 }}>
+              <div className="stack-sm" style={{ padding: 14, border: `1px dashed ${wantsPhoto && !files.length ? 'var(--accent)' : 'var(--border-strong)'}`, borderRadius: 12 }}>
                 <strong className="small">Justificatif</strong>
                 <span className="xs muted">Photo du ticket, scan ou PDF de la facture (10 Mo max par fichier).</span>
                 <FilePickers onFiles={(f) => setFiles((x) => [...x, ...f])} />

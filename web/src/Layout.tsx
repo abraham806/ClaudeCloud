@@ -4,6 +4,7 @@ import { api, DEMO } from './api';
 import { useAuth } from './auth';
 import { initials } from './format';
 import { Icon, type IconName } from './icons';
+import { ThemeSwitch, ThemeToggle } from './theme';
 
 const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' }[] = [
   { section: 'Général', to: '/app', label: 'Tableau de bord', icon: 'dashboard', end: true },
@@ -20,17 +21,18 @@ export default function Layout() {
   const location = useLocation();
   const [missing, setMissing] = useState(0);
   const [sheet, setSheet] = useState(false);
+  const [drawer, setDrawer] = useState(false);
   const canWrite = user?.role !== 'accountant';
 
   useEffect(() => {
     api.stats().then((s) => setMissing(s.todo.missing_attachments), () => {});
   }, [location.pathname]);
 
-  useEffect(() => { setSheet(false); }, [location.pathname, location.search]);
+  useEffect(() => { setSheet(false); setDrawer(false); }, [location.pathname, location.search]);
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <aside className={`sidebar ${drawer ? 'open' : ''}`} aria-label="Menu">
         <Link to="/app" className="brand">
           <span className="logo">F</span>
           <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
@@ -42,34 +44,41 @@ export default function Layout() {
               <NavLink to={n.to} end={n.end}>
                 <Icon name={n.icon} />
                 {n.label}
-                {n.badge === 'missing' && missing > 0 && <span className="pill unpaid count" style={{ height: 20 }}>{missing}</span>}
+                {n.badge === 'missing' && missing > 0 && <span className="pill count">{missing}</span>}
               </NavLink>
             </div>
           ))}
         </nav>
         {missing > 0 && (
-          <Link to="/app/justificatifs" className="closing" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link to="/app/justificatifs" className="closing">
             <strong className="small">Avant l'envoi au comptable</strong>
             <span className="xs muted">{missing} achat{missing > 1 ? 's' : ''} sans justificatif. Ajoutez la photo ou le PDF.</span>
           </Link>
         )}
-        <div className="user" style={missing > 0 ? undefined : { marginTop: 'auto' }}>
-          <span className="avatar">{initials(user?.name || '')}</span>
-          <span className="grow" style={{ display: 'flex', flexDirection: 'column' }}>
-            <strong>{user?.name}</strong>
-            <span className="xs muted">{{ owner: 'Propriétaire', member: 'Collaborateur', accountant: 'Comptable' }[user?.role || 'owner']}</span>
-          </span>
-          <button className="btn ghost icon" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><Icon name="logout" /></button>
+        <div className="side-foot" style={missing > 0 ? undefined : { marginTop: 'auto' }}>
+          <ThemeSwitch />
+          <div className="user">
+            <span className="avatar">{initials(user?.name || '')}</span>
+            <span className="grow" style={{ display: 'flex', flexDirection: 'column' }}>
+              <strong>{user?.name}</strong>
+              <span className="xs muted">{{ owner: 'Propriétaire', member: 'Collaborateur', accountant: 'Comptable' }[user?.role || 'owner']}</span>
+            </span>
+            <button className="btn ghost icon" onClick={signOut} aria-label="Se déconnecter" title="Se déconnecter"><Icon name="logout" /></button>
+          </div>
         </div>
       </aside>
 
+      {drawer && <div className="drawer-backdrop" onClick={() => setDrawer(false)} />}
+
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <header className="mobile-top">
-          <Link to="/app" className="brand" style={{ padding: 0 }}>
+          <button className="btn ghost icon" onClick={() => setDrawer(true)} aria-label="Ouvrir le menu"><Icon name="menu" size={20} /></button>
+          <Link to="/app" className="brand grow" style={{ padding: 0 }}>
             <span className="logo">F</span>
             <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
           </Link>
-          <Link to="/app/parametres" className="avatar" aria-label="Compte" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <ThemeToggle className="ghost" />
+          <Link to="/app/parametres" className="avatar" aria-label="Compte" style={{ textDecoration: 'none' }}>
             {initials(user?.name || '')}
           </Link>
         </header>
@@ -135,7 +144,7 @@ function DemoBanner() {
     signOut();
   };
   return (
-    <div className="between" style={{ padding: '10px 14px', border: '1px dashed var(--ink)', borderRadius: 10, background: 'var(--surface)' }}>
+    <div className="between demo-bar">
       <span className="small"><strong>Version de démonstration.</strong> <span className="muted">Vos données restent uniquement dans ce navigateur.</span>
         {error && <span className="demo-error"> — {error}</span>}</span>
       {user?.role !== 'accountant' && (

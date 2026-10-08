@@ -104,7 +104,7 @@ export default function ExportPage() {
                 <div className="check"><Icon name="check" /><span>{check.purchases + check.sales} pièce(s) {periodLabel} ({check.purchases} achats, {check.sales} ventes)</span></div>
                 <div className="check"><Icon name="check" /><span>Écritures équilibrées : total débit = total crédit</span></div>
                 {check.missing > 0 ? (
-                  <div className="between" style={{ padding: '10px 12px', border: '1px dashed var(--ink)', borderRadius: 8 }}>
+                  <div className="between note">
                     <span className="check"><strong>!</strong>{check.missing} achat(s) sans justificatif</span>
                     <Link to="/app/justificatifs" className="small">Compléter →</Link>
                   </div>

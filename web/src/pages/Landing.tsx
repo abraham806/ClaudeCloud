@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { Icon, type IconName } from '../icons';
-import { WovenPattern } from '../pattern';
+import { ThemeToggle } from '../theme';
 import './landing.css';
 
 const STEPS: { icon: IconName; title: string; text: string }[] = [
@@ -36,6 +36,13 @@ const FAQ = [
   ['Que se passe-t-il pour mes anciens carnets ?', 'Vous pouvez saisir vos anciennes pièces avec leur date d’origine et joindre la photo de chaque page ou ticket.'],
 ];
 
+const KPIS = [
+  { l: 'Ventes TTC', v: '18 420 000 F', d: '+12 % ce mois', c: 'var(--green)' },
+  { l: 'Dépenses TTC', v: '9 315 600 F', d: '+4 % ce mois', c: 'var(--muted)' },
+  { l: 'Solde', v: '9 104 400 F', d: '+21 %', c: 'var(--green)' },
+  { l: 'À encaisser', v: '1 840 000 F', d: '2 en retard', c: 'var(--amber)' },
+];
+
 export default function Landing() {
   const { user } = useAuth();
   const cta = user ? { to: '/app', label: 'Ouvrir mon espace' } : { to: '/inscription', label: 'Commencer gratuitement' };
@@ -43,107 +50,76 @@ export default function Landing() {
   return (
     <div className="lp">
       <header className="lp-nav">
-        <Link to="/" className="brand" style={{ padding: 0 }}>
-          <span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span>
-        </Link>
-        <nav className="lp-links" aria-label="Sections">
-          <a href="#fonctionnement">Comment ça marche</a>
-          <a href="#fonctionnalites">Fonctionnalités</a>
-          <a href="#senegal">Pour le Sénégal</a>
-          <a href="#tarifs">Tarifs</a>
-          <a href="#faq">Questions</a>
-        </nav>
-        <div className="row">
-          {!user && <Link to="/connexion" className="btn ghost">Se connecter</Link>}
-          <Link to={cta.to} className="btn dark">{user ? 'Mon espace' : 'Essayer'}</Link>
+        <div className="row" style={{ gap: 32, flexWrap: 'nowrap' }}>
+          <Link to="/" className="brand" style={{ padding: 0 }}>
+            <span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span>
+          </Link>
+          <nav className="lp-links" aria-label="Sections">
+            <a href="#fonctionnement">Comment ça marche</a>
+            <a href="#fonctionnalites">Fonctionnalités</a>
+            <a href="#senegal">Pour le Sénégal</a>
+            <a href="#tarifs">Tarifs</a>
+            <a href="#faq">Questions</a>
+          </nav>
+        </div>
+        <div className="row" style={{ flexWrap: 'nowrap' }}>
+          <ThemeToggle className="ghost" />
+          {!user && <Link to="/connexion" className="btn ghost hide-mobile">Se connecter</Link>}
+          <Link to={cta.to} className="btn dark">{user ? 'Mon espace' : 'Commencer'}</Link>
         </div>
       </header>
 
       <section className="lp-hero">
-        <div className="lp-hero-text">
-          <span className="lp-eyebrow">Dalal ak jàmm · Bienvenue</span>
-          <h1>Vos factures et vos dépenses, enfin en ordre.</h1>
-          <p className="lp-lead">
-            Facturo remplace le carnet à souches et la boîte à tickets. Enregistrez vos achats en photo, éditez vos factures en FCFA,
-            et donnez à votre comptable un fichier Excel prêt à l’emploi.
-          </p>
-          <div className="row" style={{ gap: 10 }}>
-            <Link to={cta.to} className="btn dark lg">{cta.label}<Icon name="arrowRight" /></Link>
-            <a href="#fonctionnement" className="btn lg">Voir comment ça marche</a>
-          </div>
-          <ul className="lp-ticks">
-            <li><Icon name="check" />Sur téléphone et ordinateur</li>
-            <li><Icon name="check" />Sans installation</li>
-            <li><Icon name="check" />Export SYSCOHADA</li>
-          </ul>
+        <div className="grid-bg" />
+        <div className="halo lp-hero-halo" />
+        <a href="#senegal" className="lp-badge">Nouveau · Export comptable SYSCOHADA <span className="muted">→</span></a>
+        <h1>Facturez. Encaissez.<br />Votre comptable s’occupe du reste.</h1>
+        <p className="lp-lead">
+          Factures, reçus, achats en photo et export Excel pour le comptable. Une plateforme simple,
+          pensée pour les commerces et PME du Sénégal.
+        </p>
+        <div className="row" style={{ gap: 12, justifyContent: 'center' }}>
+          <Link to={cta.to} className="btn dark lg">{cta.label}</Link>
+          <a href="#fonctionnement" className="btn lg">Voir comment ça marche</a>
         </div>
-
-        <div className="lp-hero-visual" aria-hidden="true">
-          <div className="lp-pattern"><WovenPattern id="hero-woven" color="#e4e4e7" /></div>
-          <div className="lp-phone">
-            <div className="lp-phone-screen">
-              <div className="between"><span className="xs muted">Boutique Ndèye</span><span className="avatar" style={{ width: 26, height: 26, fontSize: 10 }}>NF</span></div>
-              <strong className="title-font" style={{ fontSize: 18 }}>Bonjour Ndèye</strong>
-              <div className="lp-balance">
-                <span className="xs" style={{ color: '#a1a1aa' }}>Solde du mois</span>
-                <strong className="num" style={{ fontSize: 24, fontWeight: 500 }}>1 845 000 F</strong>
-                <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-                  <span className="lp-mini"><span>↑ Ventes</span><b className="num">3 210 000</b></span>
-                  <span className="lp-mini"><span>↓ Dépenses</span><b className="num">1 365 000</b></span>
-                </div>
-              </div>
-              <div className="lp-actions">
-                {(['camera', 'receipt', 'filePlus', 'download'] as IconName[]).map((i, n) => (
-                  <span key={i} className={n === 0 ? 'on' : ''}><Icon name={i} size={16} /></span>
-                ))}
-              </div>
-              <span className="xs strong">Récent</span>
-              {[['Station Total Plateau', 'Carburant', '− 25 000 F'], ['Hôtel Teranga', 'Facture · non payée', '+ 850 000 F'], ['Sandaga Grossiste', 'Marchandises', '− 412 500 F']].map(([n, c, a], i) => (
-                <div key={n} className="lp-item">
-                  <span className={`avatar square ${i === 1 ? 'ink' : ''}`} style={{ width: 30, height: 30, borderRadius: 9, fontSize: 10 }}>{n.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
-                  <span className="grow" style={{ display: 'flex', flexDirection: 'column' }}><b style={{ fontSize: 11, fontWeight: 500 }}>{n}</b><span style={{ fontSize: 9, color: '#71717a' }}>{c}</span></span>
-                  <span className="num" style={{ fontSize: 10, fontWeight: i === 1 ? 600 : 400 }}>{a}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="lp-ticket">
-            <strong>STATION TOTAL</strong>
-            <span>Gasoil 30 L</span>
-            <span className="num">TOTAL 25 000 F</span>
-            <em><Icon name="check" size={12} /> Justificatif enregistré</em>
-          </div>
-        </div>
+        <ul className="lp-ticks">
+          <li><Icon name="check" size={14} />Sur téléphone et ordinateur</li>
+          <li><Icon name="check" size={14} />Sans installation</li>
+          <li><Icon name="check" size={14} />Mode clair et sombre</li>
+        </ul>
       </section>
 
-      <section className="lp-compare">
-        <div className="lp-col">
-          <span className="lp-eyebrow">Avant</span>
-          <ul>
-            <li>Des factures écrites à la main, recopiées, parfois illisibles</li>
-            <li>Des tickets qui s’effacent au fond d’un tiroir</li>
-            <li>Le comptable qui ressaisit tout à la fin du mois</li>
-            <li>Aucune idée claire de ce qu’on a dépensé</li>
-          </ul>
-        </div>
-        <div className="lp-col dark">
-          <span className="lp-eyebrow" style={{ color: '#a1a1aa' }}>Avec Facturo</span>
-          <ul>
-            <li>Des factures nettes, numérotées, imprimées ou envoyées en un clic</li>
-            <li>Chaque achat avec sa photo, retrouvable en deux secondes</li>
-            <li>Un fichier Excel prêt pour le comptable</li>
-            <li>Vos chiffres du mois sur un seul écran</li>
-          </ul>
+      <section className="lp-shot-wrap" aria-hidden="true">
+        <div className="lp-shot-glow" />
+        <div className="lp-shot">
+          <div className="lp-shot-bar"><i /><i /><i /><span>facturo.app/boutique-awa</span></div>
+          <div className="lp-shot-body">
+            {KPIS.map((k) => (
+              <div key={k.l} className="lp-kpi">
+                <span className="small muted">{k.l}</span>
+                <strong className="num">{k.v}</strong>
+                <span className="xs" style={{ color: k.c }}>{k.d}</span>
+              </div>
+            ))}
+            <div className="lp-kpi lp-area">
+              <span className="small muted">Ventes, 12 derniers mois</span>
+              <svg viewBox="0 0 1000 160" preserveAspectRatio="none">
+                <defs><linearGradient id="lp-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity="0.35" /><stop offset="1" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
+                <path d="M0 130 C80 120 120 100 180 104 S300 80 360 86 S480 60 540 66 S660 40 720 46 S840 26 900 20 S960 12 1000 10 L1000 160 L0 160 Z" fill="url(#lp-area)" />
+                <path d="M0 130 C80 120 120 100 180 104 S300 80 360 86 S480 60 540 66 S660 40 720 46 S840 26 900 20 S960 12 1000 10" fill="none" stroke="var(--accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+              </svg>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="lp-section" id="fonctionnement">
         <div className="lp-head"><span className="lp-eyebrow">Comment ça marche</span><h2>Trois gestes, et votre comptabilité suit.</h2></div>
-        <div className="lp-steps">
+        <div className="lp-grid three">
           {STEPS.map((s, i) => (
-            <div key={s.title} className="lp-step">
-              <span className="lp-step-n">{i + 1}</span>
-              <span className="lp-icon"><Icon name={s.icon} size={22} /></span>
+            <div key={s.title} className="lp-cell">
+              <span className="lp-step-n num">0{i + 1}</span>
+              <span className="lp-icon"><Icon name={s.icon} size={18} /></span>
               <h3>{s.title}</h3>
               <p>{s.text}</p>
             </div>
@@ -152,11 +128,11 @@ export default function Landing() {
       </section>
 
       <section className="lp-section" id="fonctionnalites">
-        <div className="lp-head"><span className="lp-eyebrow">Fonctionnalités</span><h2>Tout ce qu’il faut. Rien de compliqué.</h2></div>
-        <div className="lp-features">
+        <div className="lp-head"><span className="lp-eyebrow">Fonctionnalités</span><h2>Tout ce qu’il faut. Rien de plus.</h2><p className="lp-sub">De la photo du ticket à l’export du mois, chaque étape tient en un geste.</p></div>
+        <div className="lp-grid three">
           {FEATURES.map((f) => (
-            <div key={f.title} className="lp-feature">
-              <span className="lp-icon"><Icon name={f.icon} size={20} /></span>
+            <div key={f.title} className="lp-cell">
+              <span className="lp-icon"><Icon name={f.icon} size={18} /></span>
               <h3>{f.title}</h3>
               <p>{f.text}</p>
             </div>
@@ -164,38 +140,38 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="lp-senegal" id="senegal">
-        <div className="lp-senegal-pattern"><WovenPattern id="sn-woven" color="#27272a" /></div>
-        <div className="lp-senegal-inner">
+      <section className="lp-section" id="senegal">
+        <div className="lp-senegal">
+          <div className="halo" style={{ left: '-10%', right: '40%', top: -120, height: 320 }} />
           <div className="stack" style={{ maxWidth: 480 }}>
-            <span className="lp-eyebrow" style={{ color: '#a1a1aa' }}>Pensé pour le Sénégal</span>
+            <span className="lp-eyebrow">Pensé pour le Sénégal</span>
             <h2>Nos réalités, nos monnaies, nos habitudes.</h2>
-            <p style={{ color: '#a1a1aa' }}>
+            <p className="lp-sub">
               Du boutiquier de Sandaga au cabinet de conseil du Plateau, Facturo parle votre langue :
-              le FCFA, la TVA à 18 %, le NINEA, Wave et Orange Money, et le WhatsApp pour tout envoyer.
+              le FCFA, la TVA à 18 %, le NINEA, Wave et Orange Money, et WhatsApp pour tout envoyer.
             </p>
-            <Link to={cta.to} className="btn lg" style={{ alignSelf: 'flex-start' }}>{cta.label}</Link>
+            <Link to={cta.to} className="btn dark lg" style={{ alignSelf: 'flex-start' }}>{cta.label}</Link>
           </div>
           <ul className="lp-sn-list">
-            {SENEGAL.map((s) => <li key={s}><Icon name="check" />{s}</li>)}
+            {SENEGAL.map((s) => <li key={s}><Icon name="check" size={16} />{s}</li>)}
           </ul>
         </div>
       </section>
 
       <section className="lp-section" id="tarifs">
-        <div className="lp-head"><span className="lp-eyebrow">Tarifs</span><h2>Commencez gratuitement.</h2><p className="muted">Les tarifs définitifs seront annoncés au lancement.</p></div>
+        <div className="lp-head"><span className="lp-eyebrow">Tarifs</span><h2>Commencez gratuitement.</h2><p className="lp-sub">Les tarifs définitifs seront annoncés au lancement.</p></div>
         <div className="lp-plans">
           {[
             { name: 'Découverte', price: 'Gratuit', text: 'Pour essayer avec vos premières pièces.', items: ['Factures, reçus et devis', 'Achats en photo', 'Tableau de bord'] },
-            { name: 'Commerce', price: '[PRIX] F / mois', text: 'Pour la boutique ou la PME au quotidien.', items: ['Pièces illimitées', 'Export Excel comptable', 'Accès comptable', '2 collaborateurs'], dark: true },
+            { name: 'Commerce', price: '[PRIX] F / mois', text: 'Pour la boutique ou la PME au quotidien.', items: ['Pièces illimitées', 'Export Excel comptable', 'Accès comptable', '2 collaborateurs'], featured: true },
             { name: 'Cabinet', price: '[PRIX] F / mois', text: 'Pour les comptables qui suivent plusieurs clients.', items: ['Plusieurs entreprises', 'Exports groupés', 'Assistance prioritaire'] },
           ].map((p) => (
-            <div key={p.name} className={`lp-plan ${p.dark ? 'dark' : ''}`}>
-              <h3>{p.name}</h3>
+            <div key={p.name} className={`lp-plan ${p.featured ? 'card glow' : ''}`}>
+              <div className="between"><h3>{p.name}</h3>{p.featured && <span className="pill quote">Conseillé</span>}</div>
               <strong className="lp-price">{p.price}</strong>
               <p>{p.text}</p>
               <ul>{p.items.map((i) => <li key={i}><Icon name="check" size={14} />{i}</li>)}</ul>
-              <Link to={cta.to} className={`btn block ${p.dark ? '' : 'dark'}`}>Choisir</Link>
+              <Link to={cta.to} className={`btn block ${p.featured ? 'dark' : ''}`}>Choisir</Link>
             </div>
           ))}
         </div>
@@ -210,19 +186,22 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="lp-final">
-        <h2>Jëf jël : on s’y met aujourd’hui ?</h2>
-        <p>Créez votre compte en une minute et enregistrez votre premier ticket.</p>
-        <Link to={cta.to} className="btn lg">{cta.label}<Icon name="arrowRight" /></Link>
+      <section className="lp-section">
+        <div className="lp-final">
+          <div className="halo" style={{ left: 0, right: 0, bottom: -180, height: 320 }} />
+          <h2>Prêt à ranger le carnet à souches ?</h2>
+          <p className="lp-sub">Créez votre compte en une minute. Votre premier ticket vous attend.</p>
+          <div className="row" style={{ gap: 12, justifyContent: 'center' }}>
+            <Link to={cta.to} className="btn dark lg">{cta.label}</Link>
+            {!user && <Link to="/connexion" className="btn lg">Se connecter</Link>}
+          </div>
+        </div>
       </section>
 
       <footer className="lp-footer">
-        <div className="lp-footer-band"><WovenPattern id="foot-woven" color="#e4e4e7" height={28} /></div>
-        <div className="between" style={{ padding: '24px 0' }}>
-          <span className="brand" style={{ padding: 0 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong><span>Dakar, Sénégal</span></span></span>
-          <span className="small muted">Contact : [EMAIL] · WhatsApp : [NUMÉRO]</span>
-          <span className="small muted">© {new Date().getFullYear()} Facturo</span>
-        </div>
+        <span className="brand" style={{ padding: 0 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong><span>Dakar, Sénégal</span></span></span>
+        <span className="small muted">Contact : [EMAIL] · WhatsApp : [NUMÉRO]</span>
+        <span className="small muted">© {new Date().getFullYear()} Facturo</span>
       </footer>
     </div>
   );

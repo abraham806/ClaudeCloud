@@ -167,7 +167,7 @@ export default function Documents({ kind }: { kind?: Kind }) {
         <div className="grow card flush">
           {selected.size > 0 && canWrite && (
             <div className="bulkbar">
-              <strong>{selected.size} sélectionnée(s)</strong><span style={{ color: '#a1a1aa' }} className="num">{money(selSum, cur)}</span>
+              <strong>{selected.size} sélectionnée(s)</strong><span className="num dim">{money(selSum, cur)}</span>
               <span style={{ marginLeft: 'auto' }} className="row">
                 <button onClick={() => bulk('paid')}>Marquer payé</button>
                 <button onClick={() => bulk('unpaid')}>Non payé</button>
@@ -265,7 +265,7 @@ function FocusPanel({ doc, cur, onClose }: { doc: Doc; cur: string; onClose: () 
       <div className="between" style={{ alignItems: 'flex-start' }}>
         <div className="stack-sm" style={{ gap: 2 }}>
           <span className="xs muted">{KIND_LABEL[doc.kind]} · {TYPE_LABEL[doc.doc_type]} · {doc.number || 'sans n°'}</span>
-          <strong className="title-font" style={{ fontSize: 17 }}>{doc.party_name}</strong>
+          <strong style={{ fontSize: 17 }}>{doc.party_name}</strong>
         </div>
         <button className="btn ghost icon" aria-label="Fermer l'aperçu" onClick={onClose}><Icon name="x" /></button>
       </div>

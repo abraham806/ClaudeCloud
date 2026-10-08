@@ -82,7 +82,7 @@ export default function Dashboard() {
       <section className="kpis">
         <div className="card kpi"><span className="small muted">Ventes TTC</span><strong className="value num">{fmt(stats?.sales.total_ttc || 0)}</strong><span className="xs muted">{stats?.sales.count || 0} facture(s) et reçu(s)</span></div>
         <div className="card kpi"><span className="small muted">Dépenses TTC</span><strong className="value num">{fmt(stats?.purchases.total_ttc || 0)}</strong><span className="xs muted">{stats?.purchases.count || 0} achat(s)</span></div>
-        <div className="card kpi hero" style={{ background: 'var(--ink)', color: 'var(--ink-text)', borderColor: 'var(--ink)' }}><span className="small" style={{ color: '#a1a1aa' }}>Solde</span><strong className="value num">{fmt(stats?.balance || 0)}</strong><span className="xs" style={{ color: '#a1a1aa' }}>Ventes − dépenses</span></div>
+        <div className="card kpi hero glow"><span className="small muted">Solde</span><strong className="value num">{fmt(stats?.balance || 0)}</strong><span className="xs muted">Ventes − dépenses</span></div>
         <div className="card kpi"><span className="small muted">TVA nette à reverser</span><strong className="value num">{fmt(stats?.vat_due || 0)}</strong><span className="xs muted">Collectée − déductible</span></div>
       </section>
 
@@ -95,7 +95,7 @@ export default function Dashboard() {
             { to: '/app/export', icon: 'download' as const, label: 'Export du mois' },
           ].map((a) => (
             <Link key={a.label} to={a.to} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 500, textAlign: 'center', textDecoration: 'none', color: 'inherit' }}>
-              <span style={{ width: 56, height: 56, borderRadius: 16, border: '1px solid var(--border)', background: a.dark ? 'var(--ink)' : 'var(--surface)', color: a.dark ? '#fff' : 'inherit', display: 'grid', placeItems: 'center' }}><Icon name={a.icon} size={22} /></span>
+              <span className={`quick ${a.dark ? 'dark' : ''}`}><Icon name={a.icon} size={22} /></span>
               {a.label}
             </Link>
           ))}
@@ -106,14 +106,14 @@ export default function Dashboard() {
         <div className="card span-2 stack">
           <div className="between" style={{ alignItems: 'flex-start' }}>
             <div className="stack-sm" style={{ gap: 2 }}><h2>Ventes et dépenses</h2><span className="small muted">12 derniers mois, TTC</span></div>
-            <div className="legend"><span><i style={{ background: 'var(--ink)' }} />Ventes</span><span><i style={{ background: '#d4d4d8' }} />Dépenses</span></div>
+            <div className="legend"><span><i className="s" />Ventes</span><span><i className="p" />Dépenses</span></div>
           </div>
           <div>
             <div className="chart" role="img" aria-label="Graphique des ventes et dépenses par mois">
               {months.map((m) => (
                 <div className="col" key={m.m} title={`${monthShort(m.m)} — ventes ${fmt(m.sales)}, dépenses ${fmt(m.purchases)}`}>
-                  <div className="bar" style={{ height: `${(m.sales / max) * 100}%`, background: 'var(--ink)' }} />
-                  <div className="bar" style={{ height: `${(m.purchases / max) * 100}%`, background: '#d4d4d8' }} />
+                  <div className="bar s" style={{ height: `${(m.sales / max) * 100}%` }} />
+                  <div className="bar p" style={{ height: `${(m.purchases / max) * 100}%` }} />
                 </div>
               ))}
             </div>
@@ -177,15 +177,15 @@ export default function Dashboard() {
           <div className="card stack-sm" style={{ gap: 10 }}>
             <h2>À traiter</h2>
             <Link className="todo" to="/app/justificatifs">
-              <span className={`pill ${stats?.todo.missing_attachments ? 'paid' : 'unpaid'}`} style={{ height: 24 }}>{stats?.todo.missing_attachments ?? 0}</span>
+              <span className={`pill ${stats?.todo.missing_attachments ? 'unpaid' : 'paid'}`}>{stats?.todo.missing_attachments ?? 0}</span>
               <span className="stack-sm small" style={{ gap: 2 }}><strong>Achats sans justificatif</strong><span className="muted">Ajoutez la photo ou le PDF</span></span>
             </Link>
             <Link className="todo" to="/app/ventes?overdue=1">
-              <span className={`pill ${stats?.todo.overdue_count ? 'paid' : 'unpaid'}`} style={{ height: 24 }}>{stats?.todo.overdue_count ?? 0}</span>
+              <span className={`pill ${stats?.todo.overdue_count ? 'late' : 'paid'}`}>{stats?.todo.overdue_count ?? 0}</span>
               <span className="stack-sm small" style={{ gap: 2 }}><strong>Factures clients en retard</strong><span className="muted">{fmt(stats?.todo.overdue_amount || 0)} à relancer</span></span>
             </Link>
             <Link className="todo" to="/app/export">
-              <span className="pill unpaid" style={{ height: 24 }}><Icon name="sheet" size={13} /></span>
+              <span className="pill soft"><Icon name="sheet" size={13} /></span>
               <span className="stack-sm small" style={{ gap: 2 }}><strong>Export du mois</strong><span className="muted">Fichier Excel pour le comptable</span></span>
             </Link>
           </div>

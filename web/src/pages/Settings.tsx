@@ -3,6 +3,7 @@ import { api, type Company, type Role, type User } from '../api';
 import { useAuth } from '../auth';
 import { CURRENCIES, initials } from '../format';
 import { Icon } from '../icons';
+import { ThemeSwitch } from '../theme';
 
 const ROLE_LABEL: Record<Role, string> = { owner: 'Propriétaire', member: 'Collaborateur', accountant: 'Comptable (lecture seule)' };
 
@@ -61,6 +62,10 @@ export default function Settings() {
         </form>
 
         <div className="stack">
+          <section className="card stack-sm" style={{ gap: 12 }}>
+            <div className="stack-sm" style={{ gap: 2 }}><h2>Apparence</h2><span className="small muted">Thème clair, sombre, ou celui de votre appareil.</span></div>
+            <ThemeSwitch />
+          </section>
           <Team isOwner={isOwner} me={user!} />
           <Password />
           <button className="btn block" onClick={signOut}><Icon name="logout" />Se déconnecter</button>
