@@ -1,6 +1,10 @@
+// Intl insère des espaces fines insécables (U+202F) que certaines polices n'affichent pas :
+// on les remplace par des espaces insécables classiques.
+const nbsp = (s: string) => s.replace(/\u202f/g, '\u00a0');
+
 export const money = (value: number, currency = 'XOF') => {
   try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value || 0);
+    return nbsp(new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value || 0));
   } catch {
     return `${(value || 0).toFixed(2)} ${currency}`;
   }
@@ -9,7 +13,7 @@ export const money = (value: number, currency = 'XOF') => {
 // Montant abrégé pour les tuiles : 18,4 M F CFA.
 export const compactMoney = (value: number, currency = 'XOF') => {
   try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value || 0);
+    return nbsp(new Intl.NumberFormat('fr-FR', { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 }).format(value || 0));
   } catch {
     return money(value, currency);
   }

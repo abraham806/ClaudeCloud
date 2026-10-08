@@ -44,7 +44,7 @@ export default function Landing() {
     <div className="lp">
       <header className="lp-nav">
         <Link to="/" className="brand" style={{ padding: 0 }}>
-          <span className="brand-text"><strong>facturo<i>.</i></strong></span>
+          <span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span>
         </Link>
         <nav className="lp-links" aria-label="Sections">
           <a href="#fonctionnement">Comment ça marche</a>
@@ -62,7 +62,7 @@ export default function Landing() {
       <section className="lp-hero">
         <div className="lp-hero-text">
           <span className="lp-eyebrow">Dalal ak jàmm · Bienvenue</span>
-          <h1>Vos factures et vos dépenses, <mark>enfin en ordre</mark>.</h1>
+          <h1>Vos factures et vos dépenses, enfin en ordre.</h1>
           <p className="lp-lead">
             Facturo remplace le carnet à souches et la boîte à tickets. Enregistrez vos achats en photo, éditez vos factures en FCFA,
             et donnez à votre comptable un fichier Excel prêt à l’emploi.
@@ -79,13 +79,13 @@ export default function Landing() {
         </div>
 
         <div className="lp-hero-visual" aria-hidden="true">
-          <div className="lp-pattern"><WovenPattern id="hero-woven" color="rgba(18,18,18,0.14)" /></div>
+          <div className="lp-pattern"><WovenPattern id="hero-woven" color="#e4e4e7" /></div>
           <div className="lp-phone">
             <div className="lp-phone-screen">
               <div className="between"><span className="xs muted">Boutique Ndèye</span><span className="avatar" style={{ width: 26, height: 26, fontSize: 10 }}>NF</span></div>
               <strong className="title-font" style={{ fontSize: 18 }}>Bonjour Ndèye</strong>
               <div className="lp-balance">
-                <span className="xs" style={{ fontWeight: 600 }}>Solde du mois</span>
+                <span className="xs" style={{ color: '#a1a1aa' }}>Solde du mois</span>
                 <strong className="num" style={{ fontSize: 24, fontWeight: 500 }}>1 845 000 F</strong>
                 <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
                   <span className="lp-mini"><span>↑ Ventes</span><b className="num">3 210 000</b></span>
@@ -127,7 +127,7 @@ export default function Landing() {
           </ul>
         </div>
         <div className="lp-col dark">
-          <span className="lp-eyebrow" style={{ color: 'var(--sun)' }}>Avec Facturo</span>
+          <span className="lp-eyebrow" style={{ color: '#a1a1aa' }}>Avec Facturo</span>
           <ul>
             <li>Des factures nettes, numérotées, imprimées ou envoyées en un clic</li>
             <li>Chaque achat avec sa photo, retrouvable en deux secondes</li>
@@ -141,7 +141,7 @@ export default function Landing() {
         <div className="lp-head"><span className="lp-eyebrow">Comment ça marche</span><h2>Trois gestes, et votre comptabilité suit.</h2></div>
         <div className="lp-steps">
           {STEPS.map((s, i) => (
-            <div key={s.title} className={`lp-step tone-${i}`}>
+            <div key={s.title} className="lp-step">
               <span className="lp-step-n">{i + 1}</span>
               <span className="lp-icon"><Icon name={s.icon} size={22} /></span>
               <h3>{s.title}</h3>
@@ -154,9 +154,9 @@ export default function Landing() {
       <section className="lp-section" id="fonctionnalites">
         <div className="lp-head"><span className="lp-eyebrow">Fonctionnalités</span><h2>Tout ce qu’il faut. Rien de compliqué.</h2></div>
         <div className="lp-features">
-          {FEATURES.map((f, i) => (
+          {FEATURES.map((f) => (
             <div key={f.title} className="lp-feature">
-              <span className={`lp-icon tone-${i % 4}`}><Icon name={f.icon} size={20} /></span>
+              <span className="lp-icon"><Icon name={f.icon} size={20} /></span>
               <h3>{f.title}</h3>
               <p>{f.text}</p>
             </div>
@@ -165,12 +165,12 @@ export default function Landing() {
       </section>
 
       <section className="lp-senegal" id="senegal">
-        <div className="lp-senegal-pattern"><WovenPattern id="sn-woven" color="#2b2b2b" /></div>
+        <div className="lp-senegal-pattern"><WovenPattern id="sn-woven" color="#27272a" /></div>
         <div className="lp-senegal-inner">
           <div className="stack" style={{ maxWidth: 480 }}>
-            <span className="lp-eyebrow" style={{ color: 'var(--sun)' }}>Pensé pour le Sénégal</span>
+            <span className="lp-eyebrow" style={{ color: '#a1a1aa' }}>Pensé pour le Sénégal</span>
             <h2>Nos réalités, nos monnaies, nos habitudes.</h2>
-            <p style={{ color: '#d6d3cb' }}>
+            <p style={{ color: '#a1a1aa' }}>
               Du boutiquier de Sandaga au cabinet de conseil du Plateau, Facturo parle votre langue :
               le FCFA, la TVA à 18 %, le NINEA, Wave et Orange Money, et le WhatsApp pour tout envoyer.
             </p>
@@ -195,7 +195,7 @@ export default function Landing() {
               <strong className="lp-price">{p.price}</strong>
               <p>{p.text}</p>
               <ul>{p.items.map((i) => <li key={i}><Icon name="check" size={14} />{i}</li>)}</ul>
-              <Link to={cta.to} className={`btn block ${p.dark ? 'sun' : 'dark'}`}>Choisir</Link>
+              <Link to={cta.to} className={`btn block ${p.dark ? '' : 'dark'}`}>Choisir</Link>
             </div>
           ))}
         </div>
@@ -213,13 +213,13 @@ export default function Landing() {
       <section className="lp-final">
         <h2>Jëf jël : on s’y met aujourd’hui ?</h2>
         <p>Créez votre compte en une minute et enregistrez votre premier ticket.</p>
-        <Link to={cta.to} className="btn dark lg">{cta.label}<Icon name="arrowRight" /></Link>
+        <Link to={cta.to} className="btn lg">{cta.label}<Icon name="arrowRight" /></Link>
       </section>
 
       <footer className="lp-footer">
-        <div className="lp-footer-band"><WovenPattern id="foot-woven" color="rgba(18,18,18,0.25)" height={28} /></div>
+        <div className="lp-footer-band"><WovenPattern id="foot-woven" color="#e4e4e7" height={28} /></div>
         <div className="between" style={{ padding: '24px 0' }}>
-          <span className="brand" style={{ padding: 0 }}><span className="brand-text"><strong>facturo<i>.</i></strong><span>Dakar, Sénégal</span></span></span>
+          <span className="brand" style={{ padding: 0 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong><span>Dakar, Sénégal</span></span></span>
           <span className="small muted">Contact : [EMAIL] · WhatsApp : [NUMÉRO]</span>
           <span className="small muted">© {new Date().getFullYear()} Facturo</span>
         </div>

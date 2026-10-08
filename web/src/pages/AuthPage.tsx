@@ -31,20 +31,21 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   return (
     <div className="auth">
       <aside className="auth-side">
-        <div style={{ position: 'absolute', inset: 'auto 0 0 0', height: 180, color: 'rgba(18,18,18,0.18)' }}><WovenPattern id="auth-woven" /></div>
-        <Link to="/" className="brand" style={{ padding: 0 }}>
-          <span className="brand-text"><strong>facturo<i style={{ color: 'var(--ink)' }}>.</i></strong></span>
+        <div style={{ position: 'absolute', inset: 'auto 0 0 0', height: 180, color: '#27272a' }}><WovenPattern id="auth-woven" /></div>
+        <Link to="/" className="brand" style={{ color: '#fff', padding: 0 }}>
+          <span className="logo" style={{ background: '#fff', color: '#09090b' }}>F</span>
+          <span className="brand-text"><strong>Facturo</strong></span>
         </Link>
         <div className="stack" style={{ maxWidth: 440, position: 'relative' }}>
-          <p className="title-font" style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>Fini les carnets de factures et les tickets perdus.</p>
-          <p style={{ color: 'var(--text-2)' }}>Enregistrez vos achats en photo, éditez vos factures en FCFA et envoyez à votre comptable un fichier Excel propre à la fin du mois.</p>
+          <p className="title-font" style={{ fontSize: 34, fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1 }}>Fini les carnets de factures et les tickets perdus.</p>
+          <p style={{ color: '#a1a1aa' }}>Enregistrez vos achats en photo, éditez vos factures en FCFA et envoyez à votre comptable un fichier Excel propre à la fin du mois.</p>
         </div>
-        <span style={{ color: 'var(--text-2)', fontSize: 13, position: 'relative' }}>Conçu à Dakar, pour les commerçants et les PME.</span>
+        <span style={{ color: '#71717a', fontSize: 13, position: 'relative' }}>Conçu à Dakar, pour les commerçants et les PME.</span>
       </aside>
 
       <div className="auth-form">
         <form onSubmit={submit}>
-          <Link to="/" className="brand show-mobile" style={{ padding: 0, marginBottom: 8 }}><span className="brand-text"><strong>facturo<i>.</i></strong></span></Link>
+          <Link to="/" className="brand show-mobile" style={{ padding: 0, marginBottom: 8 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span></Link>
           <h1>{login ? 'Connexion' : 'Créer mon compte'}</h1>
           <p className="muted small">{login ? 'Content de vous revoir.' : 'Gratuit pour démarrer. Aucune carte bancaire demandée.'}</p>
           {!login && (
