@@ -49,6 +49,15 @@ npm run dev:web     # application sur http://localhost:5173
 
 Tests : `npm test` (PGlite) ou `TEST_DATABASE_URL=postgres://… npm test` (vrai serveur Postgres).
 
+## Démo en ligne (GitHub Pages)
+
+Une version de démonstration est publiée automatiquement sur GitHub Pages à chaque push :
+**https://abraham806.github.io/ClaudeCloud/**
+
+Dans cette version, l'API tourne entièrement dans le navigateur (même code, base PGlite
+enregistrée dans le navigateur) : les données restent sur l'appareil de chaque visiteur.
+Bouton « Ajouter des exemples » pour la remplir. Build : `VITE_DEMO=1 VITE_BASE=/ClaudeCloud/ npm run build`.
+
 ## Mettre en ligne sur Vercel
 
 1. Sur vercel.com : **Add New › Project**, importer le dépôt GitHub. Vercel lit

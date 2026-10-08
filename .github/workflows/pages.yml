@@ -1,0 +1,35 @@
+# Publie la version de démonstration (tout dans le navigateur) sur GitHub Pages :
+# https://<compte>.github.io/<dépôt>/
+name: Démo GitHub Pages
+on:
+  push:
+    branches: [main, claude/saas-web-mobile-app-yayuzo]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build de la démo
+        run: npm run build -w web
+        env:
+          VITE_DEMO: '1'
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - name: Pages (liens directs et pas de Jekyll)
+        run: cp web/dist/index.html web/dist/404.html && touch web/dist/.nojekyll
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: web/dist
+          force_orphan: true
+          commit_message: Démo

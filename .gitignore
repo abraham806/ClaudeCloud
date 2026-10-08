@@ -3,3 +3,4 @@ dist/
 server/data/
 .env
 .vercel
+.demo-dist

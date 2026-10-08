@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, DEMO } from '../api';
 import { useAuth } from '../auth';
 import { CURRENCIES } from '../format';
 import { WovenPattern } from '../pattern';
@@ -64,6 +64,11 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             <input type="password" required minLength={login ? 1 : 8} autoComplete={login ? 'current-password' : 'new-password'}
               value={form.password} onChange={set('password')} placeholder={login ? '' : '8 caractères minimum'} />
           </label>
+          {DEMO && (
+            <p className="xs muted" style={{ border: '1px dashed var(--border-strong)', borderRadius: 8, padding: '8px 10px' }}>
+              Démo : le compte et les données sont créés uniquement dans ce navigateur. La première ouverture prend quelques secondes.
+            </p>
+          )}
           {error && <p className="error" role="alert">{error}</p>}
           <button className="btn dark lg block" disabled={busy}>{busy ? '…' : login ? 'Se connecter' : 'Créer mon compte'}</button>
           <p className="small muted" style={{ textAlign: 'center' }}>

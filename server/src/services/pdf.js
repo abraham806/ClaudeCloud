@@ -21,6 +21,18 @@ const frDate = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 export function renderDocumentPdf(doc, company, stream) {
   const pdf = new PDFDocument({ size: 'A4', margin: 50 });
   pdf.pipe(stream);
+  drawDocument(pdf, doc, company);
+  pdf.end();
+}
+
+// Variante sans flux Node (navigateur) : document dessiné, à terminer par l'appelant.
+export function createDocumentPdf(doc, company) {
+  const pdf = new PDFDocument({ size: 'A4', margin: 50 });
+  drawDocument(pdf, doc, company);
+  return pdf;
+}
+
+function drawDocument(pdf, doc, company) {
   const cur = company.currency;
   const left = 50;
   const right = pdf.page.width - 50;
@@ -109,5 +121,4 @@ export function renderDocumentPdf(doc, company, stream) {
       align: 'center',
     });
   }
-  pdf.end();
 }

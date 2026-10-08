@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, openBlob, type Doc, type DocQuery, type Kind } from '../api';
 import { useAuth } from '../auth';
 import { StatusPill } from '../components';
@@ -50,6 +50,7 @@ export default function Documents({ kind }: { kind?: Kind }) {
   const { company, user } = useAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const locationKey = useLocation().key;
   const cur = company?.currency || 'XOF';
   const canWrite = user?.role !== 'accountant';
   const tabs = TABS[kind || 'all'];
@@ -75,7 +76,7 @@ export default function Documents({ kind }: { kind?: Kind }) {
       api.listDocuments(query).then((d) => { setData(d); setError(''); }, (e) => setError(e.message));
     }, 150);
     return () => clearTimeout(t);
-  }, [query, reload]);
+  }, [query, reload, locationKey]);
 
   const change = (fn: () => void) => { fn(); setOffset(0); setSelected(new Set()); };
   const toggle = (id: number) => setSelected((s) => {

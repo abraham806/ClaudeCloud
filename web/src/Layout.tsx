@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { api } from './api';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { api, DEMO } from './api';
 import { useAuth } from './auth';
 import { initials } from './format';
 import { Icon, type IconName } from './icons';
@@ -74,6 +74,7 @@ export default function Layout() {
           </Link>
         </header>
         <main className="main">
+          {DEMO && <DemoBanner />}
           <Outlet />
         </main>
       </div>
@@ -105,6 +106,43 @@ export default function Layout() {
             <Link to="/app/pieces/nouvelle?kind=sale&type=quote"><span className="ic"><Icon name="file" size={20} /></span>Faire un devis</Link>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Bandeau de la version de démonstration (GitHub Pages).
+function DemoBanner() {
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const seed = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await api.seedDemo();
+      setBusy(false);
+      navigate('/app/pieces', { state: { seeded: Date.now() } });
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  };
+  const reset = async () => {
+    if (!confirm('Effacer toutes les données de démonstration de ce navigateur ?')) return;
+    await api.resetDemo();
+    signOut();
+  };
+  return (
+    <div className="between" style={{ padding: '10px 14px', border: '1px dashed var(--ink)', borderRadius: 10, background: 'var(--surface)' }}>
+      <span className="small"><strong>Version de démonstration.</strong> <span className="muted">Vos données restent uniquement dans ce navigateur.</span>
+        {error && <span className="demo-error"> — {error}</span>}</span>
+      {user?.role !== 'accountant' && (
+        <span className="row">
+          <button className="btn sm dark" disabled={busy} onClick={seed}>{busy ? 'Ajout…' : 'Ajouter des exemples'}</button>
+          {user?.role === 'owner' && <button className="btn sm" onClick={reset}>Tout effacer</button>}
+        </span>
       )}
     </div>
   );

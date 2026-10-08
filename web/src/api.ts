@@ -64,6 +64,9 @@ export const tokenStore = {
 };
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
+// Version de démonstration (GitHub Pages) : l'API tourne dans le navigateur.
+export const DEMO = import.meta.env.VITE_DEMO === '1';
+export const appUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
 export class ApiError extends Error {
   status: number;
@@ -80,13 +83,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, { ...init, headers });
+    res = DEMO
+      ? await (await import('./demo/backend.js')).handle(path, init, headers)
+      : await fetch(`${BASE}${path}`, { ...init, headers });
   } catch {
     throw new ApiError('Connexion impossible. Vérifiez votre réseau.', 0);
   }
   if (res.status === 401 && token) {
     tokenStore.set(null);
-    window.location.assign('/connexion');
+    window.location.assign(appUrl('/connexion'));
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -156,6 +161,9 @@ export const api = {
   attachment: (docId: number, attId: number) => request<Blob>(`/documents/${docId}/attachments/${attId}`),
   deleteAttachment: (docId: number, attId: number) =>
     request<void>(`/documents/${docId}/attachments/${attId}`, { method: 'DELETE' }),
+
+  seedDemo: () => request<{ count: number }>('/demo/seed', { method: 'POST' }),
+  resetDemo: () => request<void>('/demo/reset', { method: 'POST' }),
 
   stats: (from?: string, to?: string) => request<Stats>(`/reports/stats${qs({ from, to })}`),
   exportFormats: () => request<{ id: string; label: string }[]>('/reports/export/formats'),
