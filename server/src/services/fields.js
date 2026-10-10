@@ -64,6 +64,26 @@ const empty = (v) => v === undefined || v === null || (typeof v === 'string' && 
 // Vérifie et nettoie les valeurs envoyées pour une pièce. Les clés inconnues sont ignorées.
 export async function cleanCustomValues(q, companyId, kind, raw = {}) {
   const fields = forKind(await listFields(q, companyId), kind);
+  const { out, errors } = cleanValues(fields, raw);
+  if (errors.length) throw fail(400, errors.join(' · '));
+  return out;
+}
+
+// Colonnes personnalisées des lignes : mêmes types et mêmes règles (sans champ obligatoire).
+export async function cleanLineValues(q, companyId, lines) {
+  const company = await q.one('SELECT line_columns FROM companies WHERE id = $1', [companyId]);
+  const columns = company?.line_columns || [];
+  const errors = [];
+  const cleaned = lines.map((l, i) => {
+    const res = cleanValues(columns, l.custom_values || {});
+    errors.push(...res.errors.map((e) => `Ligne ${i + 1} : ${e}`));
+    return { ...l, custom_values: res.out };
+  });
+  if (errors.length) throw fail(400, errors.join(' · '));
+  return cleaned;
+}
+
+function cleanValues(fields, raw = {}) {
   const out = {};
   const errors = [];
   for (const f of fields) {
@@ -91,8 +111,16 @@ export async function cleanCustomValues(q, companyId, kind, raw = {}) {
       out[key] = String(v).trim().slice(0, 1000);
     }
   }
-  if (errors.length) throw fail(400, errors.join(' · '));
-  return out;
+  return { out, errors };
+}
+
+// Texte des colonnes personnalisées d'une ligne, ex. « Taille : Grand · Cuisson : À point ».
+export function describeLineValues(columns, values = {}) {
+  return (columns || [])
+    .map((c) => [c.label, formatFieldValue(c, values[c.id])])
+    .filter(([, text]) => text)
+    .map(([label, text]) => `${label} : ${text}`)
+    .join(' · ');
 }
 
 // Texte affichable d'une valeur (PDF, Excel, fiche de la pièce).

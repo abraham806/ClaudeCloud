@@ -7,10 +7,13 @@ export interface Company {
   id: number; name: string; address: string | null; phone: string | null; email: string | null;
   tax_id: string | null; rccm: string | null; currency: string; default_vat: number;
   accounting_plan: 'syscohada' | 'pcg'; invoice_footer: string | null;
+  line_columns?: LineColumn[];
 }
+export interface LineColumn { id: string; label: string; field_type: FieldType; options: string[] }
 export interface Line {
   id?: number; description: string; quantity: number; unit_price: number; vat_rate: number;
   total_ht?: number; total_tva?: number;
+  custom_values?: Record<string, CustomValue>;
 }
 export interface Attachment { id: number; original_name: string; mime_type: string; size: number; created_at: string }
 export type FieldType = 'text' | 'number' | 'date' | 'select' | 'checkbox';
@@ -134,6 +137,7 @@ export const api = {
     request<void>('/auth/password', json('PUT', { current_password, new_password })),
 
   updateCompany: (data: Partial<Company>) => request<Company>('/company', json('PUT', data)),
+  saveLineColumns: (columns: LineColumn[]) => request<Company>('/company/line-columns', json('PUT', { columns })),
   categories: () => request<string[]>('/company/categories'),
   parties: (kind?: Kind) => request<Party[]>(`/company/parties${qs({ kind })}`),
 

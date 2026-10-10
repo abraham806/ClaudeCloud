@@ -34,6 +34,7 @@ export const lineSchema = z.object({
   quantity: z.coerce.number().positive('Quantité > 0'),
   unit_price: z.coerce.number().min(0, 'Prix unitaire ≥ 0'),
   vat_rate: z.coerce.number().min(0).max(100).default(0),
+  custom_values: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export const documentSchema = z.object({
@@ -67,6 +68,20 @@ export const fieldSchema = z.object({
 }).refine((f) => f.field_type !== 'select' || f.options.length > 0, {
   message: 'Ajoutez au moins un choix à la liste',
 });
+
+// Colonnes des lignes de facture : identifiant court stable (survit au renommage).
+export const lineColumnSchema = z.object({
+  id: z.string().regex(/^[a-z0-9]{4,24}$/, 'Identifiant de colonne invalide'),
+  label: z.string().trim().min(1, 'Nom de la colonne requis').max(40, 'Nom de colonne trop long (40 caractères max.)'),
+  field_type: z.enum(FIELD_TYPES),
+  options: z.array(z.string().trim().min(1).max(60)).max(50).optional().default([]),
+}).refine((c) => c.field_type !== 'select' || c.options.length > 0, {
+  message: 'Ajoutez au moins un choix à la liste',
+});
+
+export const lineColumnsSchema = z.object({
+  columns: z.array(lineColumnSchema).max(10, '10 colonnes personnalisées maximum'),
+}).refine((d) => new Set(d.columns.map((c) => c.id)).size === d.columns.length, { message: 'Colonnes en double' });
 
 export const fieldOrderSchema = z.object({ ids: z.array(z.number().int().positive()).max(200) });
 

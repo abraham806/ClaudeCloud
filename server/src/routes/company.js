@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireWriter } from '../auth.js';
-import { companySchema, parse } from '../validation.js';
+import { companySchema, lineColumnsSchema, parse } from '../validation.js';
 import { listParties } from '../services/documents.js';
 
 export function companyRoutes(db) {
@@ -20,6 +20,16 @@ export function companyRoutes(db) {
          invoice_footer=@invoice_footer WHERE id=@id`,
       { ...input, id: req.user.company_id },
     );
+    res.json(await load(req.user.company_id));
+  });
+
+  // Colonnes personnalisées des lignes de facture.
+  r.put('/line-columns', requireWriter, async (req, res) => {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Réservé au propriétaire' });
+    const { columns } = parse(lineColumnsSchema, req.body);
+    await db.run('UPDATE companies SET line_columns = CAST(CAST($1 AS text) AS jsonb) WHERE id = $2', [
+      JSON.stringify(columns), req.user.company_id,
+    ]);
     res.json(await load(req.user.company_id));
   });
 

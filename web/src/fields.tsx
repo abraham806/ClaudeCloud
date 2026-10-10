@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type CustomField, type CustomValue, type Kind } from './api';
+import { api, type CustomField, type CustomValue, type Kind, type LineColumn } from './api';
 
 export const FIELD_TYPE_LABEL: Record<CustomField['field_type'], string> = {
   text: 'Texte', number: 'Nombre', date: 'Date', select: 'Liste de choix', checkbox: 'Oui / Non',
@@ -19,7 +19,7 @@ export function useFields() {
 }
 
 // Texte affiché d'une valeur (aperçu de la facture).
-export function fieldText(f: CustomField, v: CustomValue | undefined) {
+export function fieldText(f: Pick<CustomField, 'field_type'>, v: CustomValue | undefined) {
   if (v === undefined || v === null || v === '') return '';
   if (f.field_type === 'checkbox') return v ? 'Oui' : 'Non';
   if (f.field_type === 'date') return String(v).split('-').reverse().join('/');
@@ -68,4 +68,14 @@ export function CustomFieldInputs({ fields, values, onChange }: {
       })}
     </div>
   );
+}
+
+// Résumé des colonnes personnalisées d'une ligne : « Taille : Grand · Remarque : Sans piment ».
+export function lineDetails(columns: LineColumn[] | undefined, values: Record<string, CustomValue> | undefined) {
+  if (!columns?.length || !values) return '';
+  return columns
+    .map((c) => [c.label, fieldText(c, values[c.id])])
+    .filter(([, t]) => t)
+    .map(([l, t]) => `${l} : ${t}`)
+    .join(' · ');
 }

@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { describeLineValues } from './fields.js';
 
 const TITLES = {
   'sale:invoice': 'FACTURE',
@@ -81,8 +82,10 @@ function drawDocument(pdf, doc, company) {
   pdf.fillColor('#000000').font('Helvetica');
   y += 26;
   for (const l of doc.lines) {
-    const values = [l.description, String(l.quantity), money(l.unit_price, cur), `${l.vat_rate} %`, money(l.total_ht, cur)];
-    const h = Math.max(pdf.heightOfString(l.description, { width: cols[0].w - 8 }), 12);
+    const extra = describeLineValues(company.line_columns, l.custom_values);
+    const label = extra ? `${l.description}\n${extra}` : l.description;
+    const values = [label, String(l.quantity), money(l.unit_price, cur), `${l.vat_rate} %`, money(l.total_ht, cur)];
+    const h = Math.max(pdf.heightOfString(label, { width: cols[0].w - 8 }), 12);
     if (y + h > pdf.page.height - 160) {
       pdf.addPage();
       y = 50;

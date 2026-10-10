@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { formatFieldValue } from './fields.js';
 
 // ---------------------------------------------------------------------------
 // Formats d'export Excel.
@@ -88,10 +89,12 @@ function standardFormat(wb, documents, company) {
     { header: 'Taux TVA (%)', key: 'vat_rate', width: 12 },
     { header: 'Total HT', key: 'total_ht', width: 14, style: { numFmt: moneyFmt } },
     { header: 'TVA', key: 'total_tva', width: 12, style: { numFmt: moneyFmt } },
+    ...(company.line_columns || []).map((c) => ({ header: c.label, key: `lc_${c.id}`, width: Math.max(12, Math.min(28, c.label.length + 4)) })),
   ];
   for (const d of documents) {
     for (const l of d.lines) {
-      lines.addRow({ ...l, date: toDate(d.date), kind: KIND_LABEL[d.kind], number: d.number, party_name: d.party_name });
+      const extra = Object.fromEntries((company.line_columns || []).map((c) => [`lc_${c.id}`, formatFieldValue(c, l.custom_values?.[c.id])]));
+      lines.addRow({ ...l, ...extra, date: toDate(d.date), kind: KIND_LABEL[d.kind], number: d.number, party_name: d.party_name });
     }
   }
   styleHeader(lines);

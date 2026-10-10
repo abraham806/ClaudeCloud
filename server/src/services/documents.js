@@ -1,5 +1,5 @@
 import { computeTotals, toCents, fromCents } from './amounts.js';
-import { cleanCustomValues, describeCustomValues, listFields } from './fields.js';
+import { cleanCustomValues, cleanLineValues, describeCustomValues, listFields } from './fields.js';
 
 const PREFIXES = { 'sale:invoice': 'FAC', 'sale:receipt': 'REC', 'sale:quote': 'DEV' };
 
@@ -35,6 +35,7 @@ function serializeDocument(doc, lines, attachments, fields) {
         vat_rate: l.vat_rate,
         total_ht: fromCents(l.total_ht),
         total_tva: fromCents(l.total_tva),
+        custom_values: l.custom_values || {},
       })),
     }),
     ...(attachments && { attachments }),
@@ -45,9 +46,11 @@ async function writeLines(q, documentId, lines) {
   await q.run('DELETE FROM document_lines WHERE document_id = $1', [documentId]);
   for (const [i, l] of lines.entries()) {
     await q.run(
-      `INSERT INTO document_lines (document_id, position, description, quantity, unit_price, vat_rate, total_ht, total_tva)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [documentId, i, l.description, l.quantity, l.unit_price, l.vat_rate, l.total_ht, l.total_tva],
+      `INSERT INTO document_lines (document_id, position, description, quantity, unit_price, vat_rate, total_ht, total_tva,
+         custom_values)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CAST(CAST($9 AS text) AS jsonb))`,
+      [documentId, i, l.description, l.quantity, l.unit_price, l.vat_rate, l.total_ht, l.total_tva,
+        JSON.stringify(l.custom_values || {})],
     );
   }
 }
@@ -78,7 +81,7 @@ export async function createDocument(db, user, input) {
         total_ttc: totals.total_ttc,
       },
     );
-    await writeLines(q, row.id, totals.lines);
+    await writeLines(q, row.id, await cleanLineValues(q, user.company_id, totals.lines));
     return row.id;
   });
   return getDocument(db, user.company_id, id);
@@ -106,7 +109,7 @@ export async function updateDocument(db, user, id, input) {
         total_ttc: totals.total_ttc,
       },
     );
-    await writeLines(q, id, totals.lines);
+    await writeLines(q, id, await cleanLineValues(q, user.company_id, totals.lines));
     return true;
   });
   return found ? getDocument(db, user.company_id, id) : null;

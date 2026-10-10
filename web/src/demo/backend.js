@@ -5,7 +5,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { SCHEMA, toNumber, wrap } from '../../../server/src/sql.js';
 import {
-  bulkSchema, companySchema, documentSchema, fieldOrderSchema, fieldSchema, loginSchema, memberSchema, parse,
+  bulkSchema, companySchema, documentSchema, fieldOrderSchema, fieldSchema, lineColumnsSchema, loginSchema, memberSchema, parse,
   passwordSchema, periodSchema, registerSchema, statusSchema,
 } from '../../../server/src/validation.js';
 import { createField, deleteField, listFields, reorderFields, updateField } from '../../../server/src/services/fields.js';
@@ -168,6 +168,12 @@ const ROUTES = [
        WHERE id=@id`,
       { ...input, id: user.company_id },
     );
+    return json(await db.one('SELECT * FROM companies WHERE id = $1', [user.company_id]));
+  }],
+  ['PUT', '/company/line-columns', true, async ({ db, user, body }) => {
+    owner(user);
+    const { columns } = parse(lineColumnsSchema, body);
+    await db.run('UPDATE companies SET line_columns = CAST(CAST($1 AS text) AS jsonb) WHERE id = $2', [JSON.stringify(columns), user.company_id]);
     return json(await db.one('SELECT * FROM companies WHERE id = $1', [user.company_id]));
   }],
   ['GET', '/company/categories', true, async ({ db, user }) => {

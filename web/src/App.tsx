@@ -12,6 +12,7 @@ import Parties from './pages/Parties';
 import ExportPage from './pages/ExportPage';
 import Settings from './pages/Settings';
 import Variables from './pages/Variables';
+import InvoiceBeta from './pages/InvoiceBeta';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="tiers" element={<Parties />} />
         <Route path="export" element={<ExportPage />} />
         <Route path="variables" element={<Variables />} />
+        <Route path="facture-beta" element={<InvoiceBeta />} />
         <Route path="parametres" element={<Settings />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>

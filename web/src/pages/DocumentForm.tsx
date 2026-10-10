@@ -66,7 +66,7 @@ export default function DocumentForm() {
         party_name: d.party_name, party_address: d.party_address, party_tax_id: d.party_tax_id,
         category: d.category, payment_method: d.payment_method, status: d.status, notes: d.notes,
         custom_values: d.custom_values || {},
-        lines: d.lines?.length ? d.lines.map(({ description, quantity, unit_price, vat_rate }) => ({ description, quantity, unit_price, vat_rate })) : [],
+        lines: d.lines?.length ? d.lines.map(({ description, quantity, unit_price, vat_rate, custom_values }) => ({ description, quantity, unit_price, vat_rate, custom_values })) : [],
       });
       setExisting(d.attachments || []);
     }, (e) => setError(e.message));

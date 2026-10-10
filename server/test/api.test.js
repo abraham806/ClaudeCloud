@@ -295,3 +295,48 @@ test('variables personnalisées : création, saisie, validation, PDF, export, su
   const denied = await request(app).post('/api/fields').set({ Authorization: `Bearer ${acc.body.token}` }).send({ label: 'X', field_type: 'text' });
   assert.equal(denied.status, 403);
 });
+
+test('colonnes personnalisées des lignes de facture', async () => {
+  const reg = await request(app).post('/api/auth/register').send({
+    name: 'Fatou', email: 'fatou@example.com', password: 'motdepasse', company_name: 'Restaurant Chez Fatou',
+  });
+  const h = { Authorization: `Bearer ${reg.body.token}` };
+  const columns = [
+    { id: 'taille01', label: 'Taille', field_type: 'select', options: ['Petit', 'Grand'] },
+    { id: 'note0001', label: 'Remarque', field_type: 'text' },
+  ];
+  const saved = await request(app).put('/api/company/line-columns').set(h).send({ columns });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(saved.body.line_columns.map((c) => c.label), ['Taille', 'Remarque']);
+  assert.equal((await request(app).put('/api/company/line-columns').set(h).send({ columns: [{ id: 'x', label: 'A', field_type: 'text' }] })).status, 400);
+
+  const base = { kind: 'sale', doc_type: 'invoice', date: '2026-06-01', party_name: 'Table 4' };
+  const bad = await request(app).post('/api/documents').set(h).send({
+    ...base, lines: [{ description: 'Thiéboudienne', quantity: 2, unit_price: 3500, vat_rate: 18, custom_values: { taille01: 'Moyen' } }],
+  });
+  assert.equal(bad.status, 400);
+  assert.match(bad.body.error, /Ligne 1/);
+
+  const doc = await request(app).post('/api/documents').set(h).send({
+    ...base,
+    lines: [
+      { description: 'Thiéboudienne', quantity: 2, unit_price: 3500, vat_rate: 18, custom_values: { taille01: 'Grand', note0001: 'Sans piment', inconnu: 'x' } },
+      { description: 'Bissap', quantity: 3, unit_price: 500, vat_rate: 18 },
+    ],
+  });
+  assert.equal(doc.status, 201);
+  assert.deepEqual(doc.body.lines[0].custom_values, { taille01: 'Grand', note0001: 'Sans piment' });
+  assert.deepEqual(doc.body.lines[1].custom_values, {});
+  assert.equal(doc.body.total_ttc, 10030);
+
+  const pdf = await request(app).get(`/api/documents/${doc.body.id}/pdf`).set(h).buffer().parse(binaryParser);
+  assert.equal(pdf.status, 200);
+  const xlsx = await request(app).get('/api/reports/export?format=standard').set(h).buffer().parse(binaryParser);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(xlsx.body);
+  const sheet = wb.getWorksheet('Détail des lignes');
+  const header = sheet.getRow(1).values;
+  const col = header.indexOf('Taille');
+  assert.ok(col > 0);
+  assert.equal(sheet.getRow(2).getCell(col).value, 'Grand');
+});

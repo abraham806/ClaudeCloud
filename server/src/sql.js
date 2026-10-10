@@ -110,6 +110,10 @@ CREATE INDEX IF NOT EXISTS idx_custom_fields_company ON custom_fields(company_id
 -- Valeurs des variables sur chaque pièce : { "<id du champ>": valeur }.
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS custom_values JSONB NOT NULL DEFAULT '{}';
 
+-- Colonnes personnalisées des lignes de facture (taille, couleur, référence...), définies par l'entreprise.
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS line_columns JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE document_lines ADD COLUMN IF NOT EXISTS custom_values JSONB NOT NULL DEFAULT '{}';
+
 -- Compteurs de numérotation (FAC-2026-0001...) par entreprise et par année.
 CREATE TABLE IF NOT EXISTS sequences (
   company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

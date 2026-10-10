@@ -8,10 +8,11 @@ import { ThemeSwitch, ThemeToggle } from './theme';
 import { LogoFull, LogoMark } from './logo';
 import { useGithubAutosave } from './demo/Sync';
 
-const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' }[] = [
+const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' | 'beta' }[] = [
   { section: 'Général', to: '/app', label: 'Tableau de bord', icon: 'dashboard', end: true },
   { to: '/app/achats', label: 'Achats', icon: 'receipt' },
   { to: '/app/ventes', label: 'Ventes et devis', icon: 'trending' },
+  { to: '/app/facture-beta', label: 'Création facture', icon: 'filePlus', badge: 'beta' },
   { to: '/app/justificatifs', label: 'Justificatifs', icon: 'clip', badge: 'missing' },
   { to: '/app/tiers', label: 'Clients & fournisseurs', icon: 'users' },
   { section: 'Comptabilité', to: '/app/export', label: 'Export comptable', icon: 'sheet' },
@@ -49,6 +50,7 @@ export default function Layout() {
                 <Icon name={n.icon} />
                 {n.label}
                 {n.badge === 'missing' && missing > 0 && <span className="pill count">{missing}</span>}
+                {n.badge === 'beta' && <span className="pill quote count beta">Bêta</span>}
               </NavLink>
             </div>
           ))}

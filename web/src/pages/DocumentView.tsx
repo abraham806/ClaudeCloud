@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, openBlob, saveBlob, shareBlob, type Doc, type DocInput } from '../api';
 import { useAuth } from '../auth';
+import { lineDetails } from '../fields';
 import { AttachmentThumb, FilePickers, StatusPill } from '../components';
 import { KIND_LABEL, TYPE_LABEL, frDate, money } from '../format';
 import { Icon } from '../icons';
@@ -56,7 +57,7 @@ export default function DocumentView() {
       party_name: doc.party_name, party_address: doc.party_address, party_tax_id: doc.party_tax_id,
       category: doc.category, payment_method: doc.payment_method, status: doc.status, notes: doc.notes,
       custom_values: doc.custom_values || {},
-      lines: (doc.lines || []).map(({ description, quantity, unit_price, vat_rate }) => ({ description, quantity, unit_price, vat_rate })),
+      lines: (doc.lines || []).map(({ description, quantity, unit_price, vat_rate, custom_values }) => ({ description, quantity, unit_price, vat_rate, custom_values })),
     };
     navigate(`/app/pieces/nouvelle?kind=${doc.kind}`, { state: { copy } });
   };
@@ -121,7 +122,7 @@ export default function DocumentView() {
                 <tbody>
                   {doc.lines?.map((l) => (
                     <tr key={l.id}>
-                      <td style={{ whiteSpace: 'normal' }}>{l.description}</td><td className="r num">{l.quantity}</td><td className="r num hide-mobile">{money(l.unit_price, cur)}</td>
+                      <td style={{ whiteSpace: 'normal' }}>{l.description}{lineDetails(company?.line_columns, l.custom_values) && <><br /><span className="xs muted">{lineDetails(company?.line_columns, l.custom_values)}</span></>}</td><td className="r num">{l.quantity}</td><td className="r num hide-mobile">{money(l.unit_price, cur)}</td>
                       <td className="r num hide-mobile">{l.vat_rate} %</td><td className="r num">{money(l.total_ht || 0, cur)}</td>
                     </tr>
                   ))}
