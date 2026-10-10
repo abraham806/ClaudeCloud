@@ -180,6 +180,7 @@ export const api = {
 
   seedDemo: () => request<{ count: number }>('/demo/seed', { method: 'POST' }),
   resetDemo: () => request<void>('/demo/reset', { method: 'POST' }),
+  pullDemo: () => request<{ ok: boolean }>('/demo/pull', { method: 'POST' }),
   backupDemo: () => request<DemoBackup>('/demo/backup'),
   restoreDemo: (data: DemoBackup) => request<void>('/demo/restore', json('POST', data)),
   syncState: () => request<{ synced_at: string | null; dirty: boolean; remote_newer: string | null }>('/demo/sync'),

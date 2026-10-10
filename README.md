@@ -61,6 +61,15 @@ Dans cette version, l'API tourne entièrement dans le navigateur (même code, ba
 enregistrée dans le navigateur) : les données restent sur l'appareil de chaque visiteur.
 Bouton « Ajouter des exemples » pour la remplir. Build : `VITE_DEMO=1 VITE_BASE=/ClaudeCloud/ npm run build`.
 
+### Sauvegarde des données de la démo
+
+Dans la démo, les données vivent dans le navigateur. Paramètres → Sauvegarde les chiffre
+(AES-256-GCM, clé dérivée d'une phrase secrète) puis les enregistre dans le dépôt **privé**
+`abraham806/leukflowbase` (fichier `sauvegarde.json`), avec un jeton GitHub personnel limité à ce dépôt
+(« Contents : Read and write »). Le jeton et la phrase secrète restent dans le navigateur.
+Sur un nouvel appareil : page de connexion → « Récupérer mes données depuis GitHub ».
+Autre dépôt : variable de build `VITE_DATA_REPO=propriétaire/dépôt`.
+
 ## Mettre en ligne sur Vercel
 
 1. Sur vercel.com : **Add New › Project**, importer le dépôt GitHub. Vercel lit

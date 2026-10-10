@@ -1,7 +1,6 @@
 name: CI
 on:
   push:
-    paths-ignore: ['data/**']
   pull_request:
 jobs:
   test:

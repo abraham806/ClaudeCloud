@@ -5,6 +5,7 @@ import { useAuth } from '../auth';
 import { CURRENCIES } from '../format';
 import { ThemeToggle } from '../theme';
 import { LogoFull, LogoMark } from '../logo';
+import { RecoverFromGithub } from '../demo/Sync';
 
 export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { signIn } = useAuth();
@@ -76,6 +77,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <p className="small muted" style={{ textAlign: 'center' }}>
             {login ? <>Pas encore de compte ? <Link to="/inscription">Inscrivez-vous</Link></> : <>Déjà inscrit ? <Link to="/connexion">Connectez-vous</Link></>}
           </p>
+          {DEMO && login && <RecoverFromGithub />}
         </form>
       </div>
     </div>

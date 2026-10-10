@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import { api, type DemoBackup } from '../api';
 import { useAuth } from '../auth';
 import { Icon } from '../icons';
-import { BRANCH, PATH, REPO, autoSave, fetchRemote, githubToken, pushRemote } from './github.js';
+import { MIN_SECRET, PATH, REPO, autoSave, configured, fetchRemote, githubToken, passphrase, pushRemote } from './github.js';
 
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'jamais';
@@ -32,7 +32,7 @@ export function useGithubAutosave() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = () => {
       clearTimeout(timer);
-      if (autoSave.get() && githubToken.get()) saveToGithub().catch((e) => console.warn('Sauvegarde GitHub :', e.message));
+      if (autoSave.get() && configured()) saveToGithub().catch((e) => console.warn('Sauvegarde GitHub :', e.message));
     };
     const onChange = () => { clearTimeout(timer); timer = setTimeout(run, 8000); };
     const onHide = () => { if (document.visibilityState === 'hidden' && timer) run(); };
@@ -52,6 +52,7 @@ export function DemoSyncCard() {
   const isOwner = user?.role === 'owner';
   const [state, setState] = useState<{ synced_at: string | null; dirty: boolean; remote_newer: string | null } | null>(null);
   const [token, setToken] = useState(githubToken.get() || '');
+  const [secret, setSecret] = useState(passphrase.get() || '');
   const [auto, setAuto] = useState(autoSave.get());
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
   const [busy, setBusy] = useState('');
@@ -107,8 +108,8 @@ export function DemoSyncCard() {
       <div className="stack-sm" style={{ gap: 2 }}>
         <h2>Sauvegarde</h2>
         <span className="small muted">
-          Dans la démo, les données vivent dans ce navigateur. Enregistrez-les dans le dépôt GitHub pour les retrouver
-          sur un autre appareil ou après avoir vidé le navigateur.
+          Dans la démo, les données vivent dans ce navigateur. Elles sont chiffrées puis enregistrées dans votre dépôt
+          GitHub privé « {REPO.split('/')[1]} », pour les retrouver sur un autre appareil.
         </span>
       </div>
 
@@ -133,10 +134,18 @@ export function DemoSyncCard() {
               dépôt « {REPO.split('/')[1]} » seulement, permission « Contents : Read and write ».
             </span>
           </label>
+          <label className="field">Phrase secrète de chiffrement
+            <input type="password" autoComplete="new-password" value={secret} placeholder={`${MIN_SECRET} caractères minimum`}
+              onChange={(e) => { setSecret(e.target.value); passphrase.set(e.target.value); }} />
+            <span className="xs muted" style={{ fontWeight: 400 }}>
+              Sans elle, la sauvegarde est illisible, même pour GitHub. Notez-la : elle sera demandée sur chaque nouvel appareil,
+              et on ne peut pas la récupérer si elle est perdue.
+            </span>
+          </label>
           <label className="check"><input type="checkbox" checked={auto} onChange={(e) => { setAuto(e.target.checked); autoSave.set(e.target.checked); }} />
             <span>Sauvegarder automatiquement après chaque modification</span></label>
           <div className="row">
-            <button className="btn dark" disabled={!token || !!busy} onClick={act('push', async () => `Enregistré sur GitHub (${when(await saveToGithub())}).`)}>
+            <button className="btn dark" disabled={!token || secret.length < MIN_SECRET || !!busy} onClick={act('push', async () => `Enregistré sur GitHub (${when(await saveToGithub())}).`)}>
               <Icon name="upload" />{busy === 'push' ? 'Envoi…' : 'Sauvegarder sur GitHub'}
             </button>
             <button className="btn" disabled={!!busy} onClick={act('pull', async () => {
@@ -158,9 +167,46 @@ export function DemoSyncCard() {
       {msg.ok && <p className="success">{msg.ok}</p>}
       {msg.err && <p className="error">{msg.err}</p>}
       <span className="xs muted">
-        Fichier : <code>{PATH}</code> sur la branche <code>{BRANCH}</code>. Le dépôt est public : n’y mettez pas de vraies données
-        sensibles, et utilisez un mot de passe propre à la démo.
+        Fichier : <code>{PATH}</code> dans le dépôt privé <code>{REPO}</code>, chiffré en AES-256. Seule la date de
+        sauvegarde reste lisible.
       </span>
     </section>
+  );
+}
+
+// Page de connexion (nouvel appareil) : récupérer les données avant de se connecter.
+export function RecoverFromGithub() {
+  const [open, setOpen] = useState(false);
+  const [token, setToken] = useState(githubToken.get() || '');
+  const [secret, setSecret] = useState(passphrase.get() || '');
+  const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
+  const [busy, setBusy] = useState(false);
+
+  async function pull() {
+    githubToken.set(token);
+    passphrase.set(secret);
+    setBusy(true);
+    setMsg({});
+    try {
+      await api.pullDemo();
+      setMsg({ ok: 'Données récupérées. Connectez-vous avec votre email et votre mot de passe habituels.' });
+    } catch (e) {
+      setMsg({ err: (e as Error).message });
+    }
+    setBusy(false);
+  }
+
+  if (!open) {
+    return <button type="button" className="link small" style={{ alignSelf: 'center' }} onClick={() => setOpen(true)}>Récupérer mes données depuis GitHub</button>;
+  }
+  return (
+    <div className="stack-sm note" style={{ gap: 10 }}>
+      <strong className="small">Récupérer mes données (nouvel appareil)</strong>
+      <label className="field">Jeton GitHub<input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder="github_pat_…" /></label>
+      <label className="field">Phrase secrète<input type="password" autoComplete="off" value={secret} onChange={(e) => setSecret(e.target.value)} /></label>
+      <button type="button" className="btn" disabled={!token || !secret || busy} onClick={pull}><Icon name="download" />{busy ? 'Récupération…' : 'Récupérer'}</button>
+      {msg.ok && <p className="success">{msg.ok}</p>}
+      {msg.err && <p className="error">{msg.err}</p>}
+    </div>
   );
 }

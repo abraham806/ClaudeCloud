@@ -78,22 +78,24 @@ const meta = {
 
 // Au démarrage : charge la sauvegarde du dépôt si ce navigateur n'a pas de données,
 // ou si elle est plus récente et qu'aucune modification locale n'attend d'être envoyée.
-async function pullFromGithub(db) {
+async function pullFromGithub(db, { force = false } = {}) {
   const remote = await fetchRemote();
-  if (!remote?.saved_at) return;
+  if (!remote?.saved_at) return false;
   const [synced, dirty, local] = await Promise.all([
     meta.get(db, 'synced_at'), meta.get(db, 'dirty'), db.one('SELECT COUNT(*) AS n FROM companies'),
   ]);
   const empty = Number(local.n) === 0;
   const newer = !synced || remote.saved_at > synced;
-  if ((empty && !synced) || (newer && dirty !== '1')) {
+  if (force || (empty && !synced) || (newer && dirty !== '1')) {
     await importDb(db, remote);
     await meta.set(db, 'synced_at', remote.saved_at);
     await meta.set(db, 'dirty', '0');
+    await db.run("DELETE FROM demo_meta WHERE key = 'remote_newer'");
     await db.sync();
-  } else if (newer) {
-    await meta.set(db, 'remote_newer', remote.saved_at);
+    return true;
   }
+  if (newer) await meta.set(db, 'remote_newer', remote.saved_at);
+  return false;
 }
 
 const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, company_id: u.company_id });
@@ -339,6 +341,13 @@ const ROUTES = [
   }],
 
   // Propre à la démo : sauvegarde complète, restauration, état de la synchronisation GitHub.
+  // Nouvel appareil : récupère la sauvegarde avant de se connecter (seulement si ce navigateur est vide).
+  ['POST', '/demo/pull', false, async ({ db }) => {
+    const { n } = await db.one('SELECT COUNT(*) AS n FROM companies');
+    if (Number(n) > 0) throw fail(409, 'Ce navigateur contient déjà des données : connectez-vous puis utilisez Paramètres → Sauvegarde.');
+    if (!(await pullFromGithub(db, { force: true }))) throw fail(404, 'Aucune sauvegarde trouvée dans le dépôt.');
+    return json({ ok: true });
+  }],
   ['GET', '/demo/backup', true, async ({ db }) => json(await exportDb(db))],
   ['POST', '/demo/restore', true, async ({ db, user, body }) => {
     owner(user);
@@ -409,7 +418,7 @@ export async function handle(path, init = {}, headers = new Headers()) {
     const res = await route.handler(ctx);
     if (method !== 'GET') {
       // Toute modification (hors synchronisation elle-même) devra être renvoyée sur GitHub.
-      if (res.ok && !['/auth/login', '/demo/restore', '/demo/synced'].includes(url.pathname)) {
+      if (res.ok && !['/auth/login', '/demo/restore', '/demo/synced', '/demo/pull'].includes(url.pathname)) {
         await meta.set(db, 'dirty', '1');
         window.dispatchEvent(new CustomEvent('leukflow:changed'));
       }
