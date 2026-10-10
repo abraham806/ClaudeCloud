@@ -14,6 +14,7 @@ const NAV: { section?: string; to: string; label: string; icon: IconName; end?: 
   { to: '/app/justificatifs', label: 'Justificatifs', icon: 'clip', badge: 'missing' },
   { to: '/app/tiers', label: 'Clients & fournisseurs', icon: 'users' },
   { section: 'Comptabilité', to: '/app/export', label: 'Export comptable', icon: 'sheet' },
+  { section: 'Configuration', to: '/app/variables', label: 'Variables', icon: 'sliders' },
   { to: '/app/parametres', label: 'Paramètres', icon: 'settings' },
 ];
 

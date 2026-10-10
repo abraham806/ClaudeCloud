@@ -49,10 +49,26 @@ export const documentSchema = z.object({
   payment_method: optionalText,
   status: z.enum(['paid', 'unpaid']).default('paid'),
   notes: z.string().max(2000).optional().nullable(),
+  custom_values: z.record(z.string(), z.unknown()).optional().default({}),
   lines: z.array(lineSchema).min(1, 'Au moins une ligne est requise').max(200),
 }).refine((d) => !(d.kind === 'purchase' && d.doc_type === 'quote'), {
   message: 'Un devis est forcément une vente',
 });
+
+export const FIELD_TYPES = ['text', 'number', 'date', 'select', 'checkbox'];
+
+export const fieldSchema = z.object({
+  label: z.string().trim().min(1, 'Nom de la variable requis').max(80, 'Nom trop long (80 caractères max.)'),
+  field_type: z.enum(FIELD_TYPES),
+  options: z.array(z.string().trim().min(1).max(80)).max(50, '50 choix maximum').optional().default([]),
+  applies_to: z.enum(['sale', 'purchase', 'all']).default('all'),
+  required: z.boolean().default(false),
+  on_document: z.boolean().default(true),
+}).refine((f) => f.field_type !== 'select' || f.options.length > 0, {
+  message: 'Ajoutez au moins un choix à la liste',
+});
+
+export const fieldOrderSchema = z.object({ ids: z.array(z.number().int().positive()).max(200) });
 
 export const statusSchema = z.object({ status: z.enum(['paid', 'unpaid']) });
 

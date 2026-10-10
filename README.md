@@ -1,4 +1,4 @@
-# Facturo
+# LeukFlow
 
 Application de facturation pour commerçants et PME (pensée pour le Sénégal) :
 factures, reçus et devis, achats avec photo du justificatif, tableau de bord,
@@ -19,6 +19,9 @@ ordinateur et sur téléphone (installable sur l'écran d'accueil).
 - **Clients & fournisseurs** retrouvés automatiquement à partir des pièces.
 - **Export comptable Excel** : récapitulatif ou écritures débit / crédit
   (plan SYSCOHADA ou PCG), historique des exports.
+- **Variables personnalisées** : chaque entreprise crée ses propres champs (texte, nombre,
+  date, liste de choix, oui / non) pour ses ventes et / ou ses achats ; aucun au départ.
+  Ils peuvent être obligatoires, imprimés sur la facture, et sortent en colonnes dans l’export.
 - **Équipe** : collaborateur (saisie) et comptable (lecture seule).
 - Réglages par défaut : FCFA (XOF), TVA 18 %, NINEA / RCCM, SYSCOHADA.
 

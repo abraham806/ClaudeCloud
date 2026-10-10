@@ -9,6 +9,7 @@ import { companyRoutes } from './routes/company.js';
 import { documentRoutes } from './routes/documents.js';
 import { reportRoutes } from './routes/reports.js';
 import { userRoutes } from './routes/users.js';
+import { fieldRoutes } from './routes/fields.js';
 
 export function createApp(db, storage) {
   const app = express();
@@ -21,6 +22,7 @@ export function createApp(db, storage) {
   app.use('/api/documents', requireAuth, documentRoutes(db, storage));
   app.use('/api/reports', requireAuth, reportRoutes(db));
   app.use('/api/users', requireAuth, userRoutes(db));
+  app.use('/api/fields', requireAuth, fieldRoutes(db));
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Route inconnue' }));
 

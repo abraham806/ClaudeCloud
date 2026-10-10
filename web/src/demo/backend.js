@@ -5,9 +5,10 @@
 import { PGlite } from '@electric-sql/pglite';
 import { SCHEMA, toNumber, wrap } from '../../../server/src/sql.js';
 import {
-  bulkSchema, companySchema, documentSchema, loginSchema, memberSchema, parse, passwordSchema, periodSchema,
-  registerSchema, statusSchema,
+  bulkSchema, companySchema, documentSchema, fieldOrderSchema, fieldSchema, loginSchema, memberSchema, parse,
+  passwordSchema, periodSchema, registerSchema, statusSchema,
 } from '../../../server/src/validation.js';
+import { createField, deleteField, listFields, reorderFields, updateField } from '../../../server/src/services/fields.js';
 import {
   convertQuote, createDocument, deleteDocument, documentsForExport, getDocument, listAttachments, listDocuments,
   listParties, setCategory, setStatus, updateDocument,
@@ -58,6 +59,10 @@ async function currentUser(db, headers) {
   if (!user) throw fail(401, 'Session expirée, veuillez vous reconnecter');
   return { id: user.id, company_id: user.company_id, role: user.role };
 }
+
+const owner = (user) => {
+  if (user.role !== 'owner') throw fail(403, 'Réservé au propriétaire');
+};
 
 const writer = (user) => {
   if (user.role === 'accountant') throw fail(403, 'Accès en lecture seule');
@@ -145,6 +150,27 @@ const ROUTES = [
     if (params.id === user.id) throw fail(400, 'Vous ne pouvez pas supprimer votre propre compte');
     const { count } = await db.run("DELETE FROM users WHERE id = $1 AND company_id = $2 AND role != 'owner'", [params.id, user.company_id]);
     if (!count) throw fail(404, 'Utilisateur introuvable');
+    return new Response(null, { status: 204 });
+  }],
+
+  ['GET', '/fields', true, async ({ db, user }) => json(await listFields(db, user.company_id))],
+  ['POST', '/fields', true, async ({ db, user, body }) => {
+    owner(user);
+    return json(await createField(db, user.company_id, parse(fieldSchema, body)), 201);
+  }],
+  ['PUT', '/fields/order', true, async ({ db, user, body }) => {
+    owner(user);
+    return json(await reorderFields(db, user.company_id, parse(fieldOrderSchema, body).ids));
+  }],
+  ['PUT', '/fields/:id', true, async ({ db, user, params, body }) => {
+    owner(user);
+    const field = await updateField(db, user.company_id, params.id, parse(fieldSchema, body));
+    if (!field) throw fail(404, 'Variable introuvable');
+    return json(field);
+  }],
+  ['DELETE', '/fields/:id', true, async ({ db, user, params }) => {
+    owner(user);
+    if (!(await deleteField(db, user.company_id, params.id))) throw fail(404, 'Variable introuvable');
     return new Response(null, { status: 204 });
   }],
 

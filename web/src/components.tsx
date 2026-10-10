@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api, type Company, type Doc, type DocInput } from './api';
+import { api, type Company, type CustomField, type Doc, type DocInput } from './api';
+import { fieldText } from './fields';
 import { TYPE_LABEL, frDate, money } from './format';
 import { Icon } from './icons';
 
@@ -41,9 +42,13 @@ export function AttachmentThumb({ docId, att, onRemove }: {
 }
 
 // Aperçu en direct de la facture (format A4), utilisé pendant la saisie.
-export function InvoicePreview({ doc, company, totals }: {
-  doc: DocInput; company: Company | null; totals: { ht: number; tva: number };
+export function InvoicePreview({ doc, company, totals, fields = [] }: {
+  doc: DocInput; company: Company | null; totals: { ht: number; tva: number }; fields?: CustomField[];
 }) {
+  const custom = fields
+    .filter((f) => f.on_document)
+    .map((f) => ({ f, text: fieldText(f, doc.custom_values?.[String(f.id)]) }))
+    .filter((c) => c.text);
   const cur = company?.currency || 'XOF';
   const sale = doc.kind === 'sale';
   const title = { invoice: sale ? 'FACTURE' : "FACTURE D'ACHAT", receipt: sale ? 'REÇU' : "REÇU D'ACHAT", quote: 'DEVIS' }[doc.doc_type];
@@ -92,6 +97,11 @@ export function InvoicePreview({ doc, company, totals }: {
           <span>Total TTC</span><span className="num">{money((totals.ht + totals.tva) / 100, cur)}</span>
         </div>
       </div>
+      {custom.length > 0 && (
+        <div className="stack-sm" style={{ gap: 3 }}>
+          {custom.map(({ f, text }) => <span key={f.id}><strong>{f.label} :</strong> {text}</span>)}
+        </div>
+      )}
       {(doc.payment_method || doc.notes) && (
         <span style={{ color: '#52525b', whiteSpace: 'pre-line' }}>
           {doc.payment_method && `Paiement : ${doc.payment_method}. `}{doc.notes}

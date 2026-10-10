@@ -55,6 +55,7 @@ export default function DocumentView() {
       kind: doc.kind, doc_type: doc.doc_type, number: '', date: doc.date, due_date: null,
       party_name: doc.party_name, party_address: doc.party_address, party_tax_id: doc.party_tax_id,
       category: doc.category, payment_method: doc.payment_method, status: doc.status, notes: doc.notes,
+      custom_values: doc.custom_values || {},
       lines: (doc.lines || []).map(({ description, quantity, unit_price, vat_rate }) => ({ description, quantity, unit_price, vat_rate })),
     };
     navigate(`/app/pieces/nouvelle?kind=${doc.kind}`, { state: { copy } });
@@ -152,6 +153,7 @@ export default function DocumentView() {
               {doc.party_tax_id && <><dt>NINEA</dt><dd className="num">{doc.party_tax_id}</dd></>}
               {doc.category && <><dt>Catégorie</dt><dd>{doc.category}</dd></>}
               {doc.payment_method && <><dt>Paiement</dt><dd>{doc.payment_method}</dd></>}
+              {doc.custom?.map((c) => <span key={c.id} style={{ display: 'contents' }}><dt>{c.label}</dt><dd>{c.text}</dd></span>)}
               {doc.notes && <><dt>Notes</dt><dd style={{ whiteSpace: 'pre-line' }}>{doc.notes}</dd></>}
             </dl>
           </div>

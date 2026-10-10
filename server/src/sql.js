@@ -91,6 +91,25 @@ CREATE TABLE IF NOT EXISTS exports (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Variables personnalisées : chaque entreprise crée ses propres champs
+-- (type de client, code interne, nom du vendeur...). Aucune n'existe au départ.
+CREATE TABLE IF NOT EXISTS custom_fields (
+  id          SERIAL PRIMARY KEY,
+  company_id  INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  label       TEXT NOT NULL,
+  field_type  TEXT NOT NULL CHECK (field_type IN ('text', 'number', 'date', 'select', 'checkbox')),
+  options     JSONB NOT NULL DEFAULT '[]',
+  applies_to  TEXT NOT NULL DEFAULT 'all' CHECK (applies_to IN ('sale', 'purchase', 'all')),
+  required    BOOLEAN NOT NULL DEFAULT false,
+  on_document BOOLEAN NOT NULL DEFAULT true,
+  position    INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_custom_fields_company ON custom_fields(company_id, position);
+
+-- Valeurs des variables sur chaque pièce : { "<id du champ>": valeur }.
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS custom_values JSONB NOT NULL DEFAULT '{}';
+
 -- Compteurs de numérotation (FAC-2026-0001...) par entreprise et par année.
 CREATE TABLE IF NOT EXISTS sequences (
   company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

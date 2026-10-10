@@ -220,3 +220,78 @@ test('par défaut : FCFA, TVA 18 %, SYSCOHADA', async () => {
   assert.equal(me.body.company.default_vat, 18);
   assert.equal(me.body.company.accounting_plan, 'syscohada');
 });
+
+test('variables personnalisées : création, saisie, validation, PDF, export, suppression', async () => {
+  const reg = await request(app).post('/api/auth/register').send({
+    name: 'Moussa', email: 'moussa@example.com', password: 'motdepasse', company_name: 'Quincaillerie Moussa',
+  });
+  const h = { Authorization: `Bearer ${reg.body.token}` };
+
+  // Aucune variable au départ.
+  assert.deepEqual((await request(app).get('/api/fields').set(h)).body, []);
+
+  const type = await request(app).post('/api/fields').set(h).send({
+    label: 'Type de client', field_type: 'select', options: ['Particulier', 'Entreprise', 'Abonné', 'Entreprise'],
+    applies_to: 'sale', required: true,
+  });
+  assert.equal(type.status, 201);
+  assert.deepEqual(type.body.options, ['Particulier', 'Entreprise', 'Abonné']);
+  const code = await request(app).post('/api/fields').set(h).send({ label: 'Code vendeur', field_type: 'text' });
+  const qty = await request(app).post('/api/fields').set(h).send({ label: 'Nombre de colis', field_type: 'number', on_document: false });
+  const badSelect = await request(app).post('/api/fields').set(h).send({ label: 'Vide', field_type: 'select', options: [] });
+  assert.equal(badSelect.status, 400);
+
+  const base = { kind: 'sale', doc_type: 'invoice', date: '2026-05-02', party_name: 'Hôtel Teranga',
+    lines: [{ description: 'Ciment', quantity: 10, unit_price: 5000, vat_rate: 18 }] };
+
+  // Variable requise manquante, puis choix invalide.
+  const missing = await request(app).post('/api/documents').set(h).send(base);
+  assert.equal(missing.status, 400);
+  assert.match(missing.body.error, /Type de client/);
+  const invalid = await request(app).post('/api/documents').set(h).send({ ...base, custom_values: { [type.body.id]: 'Inconnu' } });
+  assert.equal(invalid.status, 400);
+
+  const doc = await request(app).post('/api/documents').set(h).send({
+    ...base,
+    custom_values: { [type.body.id]: 'Entreprise', [code.body.id]: '  V-07 ', [qty.body.id]: '3,5', 99999: 'ignoré' },
+  });
+  assert.equal(doc.status, 201);
+  assert.deepEqual(doc.body.custom_values, { [type.body.id]: 'Entreprise', [code.body.id]: 'V-07', [qty.body.id]: 3.5 });
+  assert.deepEqual(doc.body.custom.map((c) => [c.label, c.text]), [['Type de client', 'Entreprise'], ['Code vendeur', 'V-07'], ['Nombre de colis', '3,5']]);
+
+  // Une variable réservée aux ventes n'est pas exigée sur un achat.
+  const purchase = await request(app).post('/api/documents').set(h).send({ ...base, kind: 'purchase', doc_type: 'receipt' });
+  assert.equal(purchase.status, 201);
+
+  // Recherche dans les valeurs.
+  const found = await request(app).get('/api/documents?q=V-07').set(h);
+  assert.equal(found.body.total, 1);
+
+  const pdf = await request(app).get(`/api/documents/${doc.body.id}/pdf`).set(h).buffer().parse(binaryParser);
+  assert.equal(pdf.status, 200);
+
+  const xlsx = await request(app).get('/api/reports/export?format=standard').set(h).buffer().parse(binaryParser);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(xlsx.body);
+  const header = wb.getWorksheet('Pièces').getRow(1).values.filter(Boolean);
+  assert.ok(header.includes('Type de client') && header.includes('Code vendeur'));
+
+  // Ordre, modification (le type ne change pas), suppression.
+  const order = await request(app).put('/api/fields/order').set(h).send({ ids: [code.body.id, type.body.id, qty.body.id] });
+  assert.deepEqual(order.body.map((f) => f.label), ['Code vendeur', 'Type de client', 'Nombre de colis']);
+  const renamed = await request(app).put(`/api/fields/${code.body.id}`).set(h).send({ label: 'Vendeur', field_type: 'text' });
+  assert.equal(renamed.body.label, 'Vendeur');
+  const retype = await request(app).put(`/api/fields/${code.body.id}`).set(h).send({ label: 'Vendeur', field_type: 'number' });
+  assert.equal(retype.status, 400);
+  assert.equal((await request(app).delete(`/api/fields/${code.body.id}`).set(h)).status, 204);
+  const after = await request(app).get(`/api/documents/${doc.body.id}`).set(h);
+  assert.equal(after.body.custom_values[code.body.id], undefined);
+
+  // Les variables d'une entreprise ne sont pas visibles par une autre ; le comptable ne peut pas les gérer.
+  assert.equal((await request(app).get('/api/fields').set(auth())).body.length, 0);
+  assert.equal((await request(app).delete(`/api/fields/${type.body.id}`).set(auth())).status, 404);
+  await request(app).post('/api/users').set(h).send({ name: 'Compta', email: 'compta-m@example.com', password: 'motdepasse', role: 'accountant' });
+  const acc = await request(app).post('/api/auth/login').send({ email: 'compta-m@example.com', password: 'motdepasse' });
+  const denied = await request(app).post('/api/fields').set({ Authorization: `Bearer ${acc.body.token}` }).send({ label: 'X', field_type: 'text' });
+  assert.equal(denied.status, 403);
+});

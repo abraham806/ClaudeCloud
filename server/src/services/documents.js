@@ -1,4 +1,5 @@
 import { computeTotals, toCents, fromCents } from './amounts.js';
+import { cleanCustomValues, describeCustomValues, listFields } from './fields.js';
 
 const PREFIXES = { 'sale:invoice': 'FAC', 'sale:receipt': 'REC', 'sale:quote': 'DEV' };
 
@@ -16,9 +17,11 @@ async function nextNumber(q, companyId, prefix, date) {
 }
 
 // Convertit une ligne de la base (centimes) vers l'API (décimales).
-function serializeDocument(doc, lines, attachments) {
+function serializeDocument(doc, lines, attachments, fields) {
   return {
     ...doc,
+    custom_values: doc.custom_values || {},
+    ...(fields && { custom: describeCustomValues(fields, doc) }),
     overdue: doc.status === 'unpaid' && doc.doc_type !== 'quote' && !!doc.due_date && doc.due_date < todayIso(),
     total_ht: fromCents(doc.total_ht),
     total_tva: fromCents(doc.total_tva),
@@ -59,15 +62,17 @@ export async function createDocument(db, user, input) {
     const number = input.number || (prefix ? await nextNumber(q, user.company_id, prefix, input.date) : null);
     const row = await q.one(
       `INSERT INTO documents (company_id, kind, doc_type, number, date, due_date, party_name, party_address,
-         party_tax_id, category, payment_method, status, notes, total_ht, total_tva, total_ttc, created_by)
+         party_tax_id, category, payment_method, status, notes, total_ht, total_tva, total_ttc, created_by, custom_values)
        VALUES (@company_id, @kind, @doc_type, @number, @date, @due_date, @party_name, @party_address,
-         @party_tax_id, @category, @payment_method, @status, @notes, @total_ht, @total_tva, @total_ttc, @created_by)
+         @party_tax_id, @category, @payment_method, @status, @notes, @total_ht, @total_tva, @total_ttc, @created_by,
+         CAST(CAST(@custom_values AS text) AS jsonb))
        RETURNING id`,
       {
         ...nullify(input),
         number,
         company_id: user.company_id,
         created_by: user.id,
+        custom_values: JSON.stringify(await cleanCustomValues(q, user.company_id, input.kind, input.custom_values)),
         total_ht: totals.total_ht,
         total_tva: totals.total_tva,
         total_ttc: totals.total_ttc,
@@ -88,11 +93,12 @@ export async function updateDocument(db, user, id, input) {
       `UPDATE documents SET kind=@kind, doc_type=@doc_type, number=@number, date=@date, due_date=@due_date,
          party_name=@party_name, party_address=@party_address, party_tax_id=@party_tax_id, category=@category,
          payment_method=@payment_method, status=@status, notes=@notes, total_ht=@total_ht, total_tva=@total_tva,
-         total_ttc=@total_ttc, updated_at=now()
+         total_ttc=@total_ttc, custom_values=CAST(CAST(@custom_values AS text) AS jsonb), updated_at=now()
        WHERE id=@id AND company_id=@company_id`,
       {
         ...nullify(input),
         number: input.number || existing.number,
+        custom_values: JSON.stringify(await cleanCustomValues(q, user.company_id, input.kind, input.custom_values)),
         id,
         company_id: user.company_id,
         total_ht: totals.total_ht,
@@ -109,14 +115,15 @@ export async function updateDocument(db, user, id, input) {
 export async function getDocument(db, companyId, id) {
   const doc = await db.one('SELECT * FROM documents WHERE id = $1 AND company_id = $2', [id, companyId]);
   if (!doc) return null;
-  const [lines, attachments] = await Promise.all([
+  const [lines, attachments, fields] = await Promise.all([
     db.query('SELECT * FROM document_lines WHERE document_id = $1 ORDER BY position', [id]),
     db.query(
       'SELECT id, original_name, mime_type, size, created_at FROM attachments WHERE document_id = $1 ORDER BY id',
       [id],
     ),
+    listFields(db, companyId),
   ]);
-  return serializeDocument(doc, lines, attachments);
+  return serializeDocument(doc, lines, attachments, fields);
 }
 
 export async function listDocuments(
@@ -131,7 +138,11 @@ export async function listDocuments(
   if (party) where.push('d.party_name = @party');
   if (missing) where.push("d.doc_type != 'quote' AND NOT EXISTS (SELECT 1 FROM attachments a WHERE a.document_id = d.id)");
   if (overdue) where.push("d.status = 'unpaid' AND d.doc_type != 'quote' AND d.due_date < @today");
-  if (q) where.push('(d.party_name ILIKE @q OR d.number ILIKE @q OR d.category ILIKE @q OR d.notes ILIKE @q)');
+  if (q) {
+    where.push(
+      '(d.party_name ILIKE @q OR d.number ILIKE @q OR d.category ILIKE @q OR d.notes ILIKE @q OR EXISTS (SELECT 1 FROM jsonb_each_text(d.custom_values) cv WHERE cv.value ILIKE @q))',
+    );
+  }
   const params = { companyId, from, to, kind, status, doc_type, party, today: todayIso(), q: q && `%${q}%` };
   const sqlWhere = where.join(' AND ');
   const [rows, agg] = await Promise.all([
@@ -156,13 +167,14 @@ export async function documentsForExport(db, companyId, { from, to, kind } = {})
     { companyId, from, to, kind },
   );
   if (!docs.length) return [];
+  const fields = await listFields(db, companyId);
   const lines = await db.query(
     'SELECT * FROM document_lines WHERE document_id = ANY($1::int[]) ORDER BY document_id, position',
     [docs.map((d) => d.id)],
   );
   const byDoc = new Map();
   for (const l of lines) byDoc.set(l.document_id, [...(byDoc.get(l.document_id) || []), l]);
-  return docs.map((d) => serializeDocument(d, byDoc.get(d.id) || []));
+  return docs.map((d) => serializeDocument(d, byDoc.get(d.id) || [], undefined, fields));
 }
 
 // Supprime la pièce ; renvoie les fichiers à effacer du stockage (ou null si introuvable).

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { api, type Company, type Role, type User } from '../api';
 import { useAuth } from '../auth';
 import { CURRENCIES, initials } from '../format';
@@ -62,6 +63,12 @@ export default function Settings() {
         </form>
 
         <div className="stack">
+          <Link to="/app/variables" className="hint-card">
+            <Icon name="sliders" />
+            <span className="grow"><strong className="small">Variables</strong><br />
+              <span className="xs muted">Les champs propres à votre activité, sur vos ventes et achats.</span></span>
+            <Icon name="arrowRight" />
+          </Link>
           <section className="card stack-sm" style={{ gap: 12 }}>
             <div className="stack-sm" style={{ gap: 2 }}><h2>Apparence</h2><span className="small muted">Thème clair, sombre, ou celui de votre appareil.</span></div>
             <ThemeSwitch />

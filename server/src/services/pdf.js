@@ -107,6 +107,21 @@ function drawDocument(pdf, doc, company) {
     y += bold ? 20 : 16;
   });
 
+  // Variables personnalisées (celles marquées « afficher sur la pièce »).
+  const custom = (doc.custom || []).filter((c) => c.on_document && c.text);
+  if (custom.length) {
+    y += 6;
+    if (y + custom.length * 14 > pdf.page.height - 120) {
+      pdf.addPage();
+      y = 50;
+    }
+    pdf.fontSize(9);
+    for (const c of custom) {
+      pdf.font('Helvetica-Bold').text(`${c.label} : `, left, y, { continued: true }).font('Helvetica').text(c.text, { width: right - left });
+      y = pdf.y + 3;
+    }
+  }
+
   pdf.font('Helvetica').fontSize(9);
   y += 10;
   if (doc.payment_method) pdf.text(`Mode de paiement : ${doc.payment_method}`, left, y);

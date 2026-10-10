@@ -13,17 +13,26 @@ export interface Line {
   total_ht?: number; total_tva?: number;
 }
 export interface Attachment { id: number; original_name: string; mime_type: string; size: number; created_at: string }
+export type FieldType = 'text' | 'number' | 'date' | 'select' | 'checkbox';
+export type CustomValue = string | number | boolean;
+export interface CustomField {
+  id: number; label: string; field_type: FieldType; options: string[]; applies_to: Kind | 'all';
+  required: boolean; on_document: boolean; position: number;
+}
+export type FieldInput = Omit<CustomField, 'id' | 'position'>;
 export interface Doc {
   id: number; kind: Kind; doc_type: DocType; number: string | null; date: string; due_date: string | null;
   party_name: string; party_address: string | null; party_tax_id: string | null; category: string | null;
   payment_method: string | null; status: 'paid' | 'unpaid'; notes: string | null; overdue: boolean;
   total_ht: number; total_tva: number; total_ttc: number;
   lines?: Line[]; attachments?: Attachment[]; attachment_count?: number;
+  custom_values: Record<string, CustomValue>;
+  custom?: { id: number; label: string; value: CustomValue; text: string; on_document: boolean }[];
 }
 export type DocInput = Pick<
   Doc,
   'kind' | 'doc_type' | 'number' | 'date' | 'due_date' | 'party_name' | 'party_address' | 'party_tax_id' |
-  'category' | 'payment_method' | 'status' | 'notes'
+  'category' | 'payment_method' | 'status' | 'notes' | 'custom_values'
 > & { lines: Line[] };
 
 export interface Totals { count: number; total_ht: number; total_tva: number; total_ttc: number; unpaid: number }
@@ -131,6 +140,12 @@ export const api = {
   addUser: (data: { name: string; email: string; password: string; role: Role }) =>
     request<User>('/users', json('POST', data)),
   deleteUser: (id: number) => request<void>(`/users/${id}`, { method: 'DELETE' }),
+
+  fields: () => request<CustomField[]>('/fields'),
+  createField: (data: FieldInput) => request<CustomField>('/fields', json('POST', data)),
+  updateField: (id: number, data: FieldInput) => request<CustomField>(`/fields/${id}`, json('PUT', data)),
+  deleteField: (id: number) => request<void>(`/fields/${id}`, { method: 'DELETE' }),
+  reorderFields: (ids: number[]) => request<CustomField[]>('/fields/order', json('PUT', { ids })),
 
   listDocuments: (params: DocQuery) =>
     request<{ items: Doc[]; total: number; sum_ttc: number }>(`/documents${qs({ ...params })}`),

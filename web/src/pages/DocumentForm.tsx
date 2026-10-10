@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, type Attachment, type DocInput, type DocType, type Kind, type Line, type Party } from '../api';
 import { useAuth } from '../auth';
+import { CustomFieldInputs, fieldsFor, useFields } from '../fields';
 import { AttachmentThumb, FilePickers, InvoicePreview } from '../components';
 import { DEFAULT_CATEGORIES, PAYMENT_METHODS, addDays, money, today } from '../format';
 import { Icon } from '../icons';
@@ -19,7 +20,7 @@ function defaults(kind: Kind, type: DocType, vat: number): DocInput {
     kind, doc_type: type, number: '', date: today(),
     due_date: unpaid ? addDays(today(), 30) : null,
     party_name: '', party_address: '', party_tax_id: '', category: '',
-    payment_method: type === 'receipt' ? 'Espèces' : '', status: unpaid ? 'unpaid' : 'paid', notes: '',
+    payment_method: type === 'receipt' ? 'Espèces' : '', status: unpaid ? 'unpaid' : 'paid', notes: '', custom_values: {},
     lines: [{ description: '', quantity: 1, unit_price: 0, vat_rate: vat }],
   };
 }
@@ -29,7 +30,8 @@ export default function DocumentForm() {
   const [search] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { company } = useAuth();
+  const { company, user } = useAuth();
+  const allFields = useFields();
   const editing = Boolean(id);
   const vat = company?.default_vat ?? 18;
   const cur = company?.currency || 'XOF';
@@ -63,6 +65,7 @@ export default function DocumentForm() {
         kind: d.kind, doc_type: d.doc_type, number: d.number, date: d.date, due_date: d.due_date,
         party_name: d.party_name, party_address: d.party_address, party_tax_id: d.party_tax_id,
         category: d.category, payment_method: d.payment_method, status: d.status, notes: d.notes,
+        custom_values: d.custom_values || {},
         lines: d.lines?.length ? d.lines.map(({ description, quantity, unit_price, vat_rate }) => ({ description, quantity, unit_price, vat_rate })) : [],
       });
       setExisting(d.attachments || []);
@@ -94,6 +97,13 @@ export default function DocumentForm() {
   }, { ht: 0, tva: 0 });
 
   const sale = doc.kind === 'sale';
+  const kindFields = fieldsFor(allFields, doc.kind);
+  const setCustom = (fid: number, v: unknown) => setDoc((d) => {
+    const next = { ...(d.custom_values || {}) };
+    if (v === undefined) delete next[String(fid)];
+    else next[String(fid)] = v as string;
+    return { ...d, custom_values: next };
+  });
   const switchKind = (k: Kind) => setDoc((d) => ({
     ...d, kind: k,
     doc_type: k === 'purchase' && d.doc_type === 'quote' ? 'invoice' : d.doc_type,
@@ -228,6 +238,23 @@ export default function DocumentForm() {
             </div>
           </section>
 
+          {kindFields.length > 0 ? (
+            <section className="card stack">
+              <div className="between">
+                <h2>Informations complémentaires</h2>
+                {user?.role === 'owner' && <Link className="small" to="/app/variables">Gérer les variables</Link>}
+              </div>
+              <CustomFieldInputs fields={kindFields} values={doc.custom_values || {}} onChange={setCustom} />
+            </section>
+          ) : user?.role === 'owner' && (
+            <Link to="/app/variables" className="hint-card">
+              <Icon name="plus" />
+              <span className="grow"><strong className="small">Ajoutez vos propres variables</strong><br />
+                <span className="xs muted">Type de client, code vendeur, référence interne… Elles apparaîtront ici.</span></span>
+              <Icon name="arrowRight" />
+            </Link>
+          )}
+
           <section className="card stack">
             <div className="between">
               <h2>{quick ? 'Montant' : 'Lignes'}</h2>
@@ -338,7 +365,7 @@ export default function DocumentForm() {
 
         <aside>
           <span className="eyebrow">Aperçu en direct</span>
-          <InvoicePreview doc={doc} company={company} totals={totals} />
+          <InvoicePreview doc={doc} company={company} totals={totals} fields={kindFields} />
         </aside>
       </div>
     </>

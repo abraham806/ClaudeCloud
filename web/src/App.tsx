@@ -11,6 +11,7 @@ import Attachments from './pages/Attachments';
 import Parties from './pages/Parties';
 import ExportPage from './pages/ExportPage';
 import Settings from './pages/Settings';
+import Variables from './pages/Variables';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="justificatifs" element={<Attachments />} />
         <Route path="tiers" element={<Parties />} />
         <Route path="export" element={<ExportPage />} />
+        <Route path="variables" element={<Variables />} />
         <Route path="parametres" element={<Settings />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>

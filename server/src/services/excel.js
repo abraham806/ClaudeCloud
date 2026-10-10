@@ -38,6 +38,12 @@ function styleHeader(sheet) {
   sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columnCount } };
 }
 
+function customColumns(documents) {
+  const cols = new Map();
+  for (const d of documents) for (const c of d.custom || []) if (!cols.has(c.id)) cols.set(c.id, c);
+  return [...cols.values()];
+}
+
 const toDate = (iso) => (iso ? new Date(`${iso}T00:00:00Z`) : null);
 
 function standardFormat(wb, documents, company) {
@@ -55,10 +61,13 @@ function standardFormat(wb, documents, company) {
     { header: `TVA (${company.currency})`, key: 'total_tva', width: 13, style: { numFmt: moneyFmt } },
     { header: `Total TTC (${company.currency})`, key: 'total_ttc', width: 15, style: { numFmt: moneyFmt } },
     { header: 'Notes', key: 'notes', width: 30 },
+    // Une colonne par variable personnalisée renseignée sur au moins une pièce.
+    ...customColumns(documents).map((c) => ({ header: c.label, key: `cf_${c.id}`, width: Math.max(12, Math.min(30, c.label.length + 4)) })),
   ];
   for (const d of documents) {
     journal.addRow({
       ...d,
+      ...Object.fromEntries((d.custom || []).map((c) => [`cf_${c.id}`, c.text])),
       date: toDate(d.date),
       kind: KIND_LABEL[d.kind],
       doc_type: TYPE_LABEL[d.doc_type],
