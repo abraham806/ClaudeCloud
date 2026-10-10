@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/ClaudeCloud/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f3f4f6" />
+    <script>
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('facturo.theme'); } catch (e) {}
+        var dark = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        if (dark) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0a0f1d');
+      })();
+    </script>
+    <meta name="description" content="LeukFlow : vos factures, reçus, achats et ventes au même endroit. Photographiez vos justificatifs, imprimez vos factures, envoyez l'export Excel à votre comptable." />
+    <link rel="manifest" href="/ClaudeCloud/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/ClaudeCloud/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>LeukFlow — La facturation simple, au Sénégal</title>
+    <script type="module" crossorigin src="/ClaudeCloud/assets/index-DNQ1Nd6G.js"></script>
+    <link rel="stylesheet" crossorigin href="/ClaudeCloud/assets/index-B5LkV_0V.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
