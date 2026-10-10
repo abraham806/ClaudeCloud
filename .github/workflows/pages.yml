@@ -4,6 +4,8 @@ name: Démo GitHub Pages
 on:
   push:
     branches: [main, claude/saas-web-mobile-app-yayuzo]
+    # Les sauvegardes de la démo (data/) sont lues directement depuis le dépôt : pas besoin de republier.
+    paths-ignore: ['data/**']
   workflow_dispatch:
 permissions:
   contents: write
@@ -25,6 +27,8 @@ jobs:
         env:
           VITE_DEMO: '1'
           VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_GITHUB_REPO: ${{ github.repository }}
+          VITE_GITHUB_BRANCH: ${{ github.ref_name }}
       - name: Pages (liens directs et pas de Jekyll)
         run: cp web/dist/index.html web/dist/404.html && touch web/dist/.nojekyll
       - uses: peaceiris/actions-gh-pages@v4

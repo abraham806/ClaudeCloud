@@ -431,3 +431,10 @@ table.table { width: 100%; border-collapse: collapse; }
   .var-row { align-items: flex-start; flex-wrap: wrap; }
   .var-actions { width: 100%; justify-content: flex-end; margin-top: -4px; }
 }
+
+/* Sauvegarde GitHub (démo) */
+.sync-status { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.sync-status .dot { width: 8px; height: 8px; border-radius: 999px; margin-top: 6px; flex: none; }
+.sync-status .dot.ok { background: var(--mint); }
+.sync-status .dot.warn { background: var(--amber); }
+code { font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--subtle); }

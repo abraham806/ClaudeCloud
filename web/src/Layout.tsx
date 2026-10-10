@@ -6,6 +6,7 @@ import { initials } from './format';
 import { Icon, type IconName } from './icons';
 import { ThemeSwitch, ThemeToggle } from './theme';
 import { LogoFull, LogoMark } from './logo';
+import { useGithubAutosave } from './demo/Sync';
 
 const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' }[] = [
   { section: 'Général', to: '/app', label: 'Tableau de bord', icon: 'dashboard', end: true },
@@ -126,6 +127,7 @@ export default function Layout() {
 // Bandeau de la version de démonstration (GitHub Pages).
 function DemoBanner() {
   const { signOut, user } = useAuth();
+  useGithubAutosave();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -148,7 +150,8 @@ function DemoBanner() {
   };
   return (
     <div className="between demo-bar">
-      <span className="small"><strong>Version de démonstration.</strong> <span className="muted">Vos données restent uniquement dans ce navigateur.</span>
+      <span className="small"><strong>Version de démonstration.</strong> <span className="muted">Vos données sont dans ce navigateur ;</span>{' '}
+        <Link to="/app/parametres">sauvegardez-les sur GitHub</Link><span className="muted"> pour les retrouver partout.</span>
         {error && <span className="demo-error"> — {error}</span>}</span>
       {user?.role !== 'accountant' && (
         <span className="row">

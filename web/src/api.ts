@@ -54,6 +54,7 @@ export interface ExportRow {
   id: number; format: string; date_from: string | null; date_to: string | null; kind: string | null;
   doc_count: number; created_at: string; user_name: string | null;
 }
+export interface DemoBackup { app: 'leukflow-demo'; version: number; saved_at: string; tables: Record<string, unknown[]> }
 export interface DocQuery {
   kind?: string; from?: string; to?: string; q?: string; status?: string; doc_type?: string; party?: string;
   missing?: boolean; overdue?: boolean; offset?: number; limit?: number;
@@ -179,6 +180,10 @@ export const api = {
 
   seedDemo: () => request<{ count: number }>('/demo/seed', { method: 'POST' }),
   resetDemo: () => request<void>('/demo/reset', { method: 'POST' }),
+  backupDemo: () => request<DemoBackup>('/demo/backup'),
+  restoreDemo: (data: DemoBackup) => request<void>('/demo/restore', json('POST', data)),
+  syncState: () => request<{ synced_at: string | null; dirty: boolean; remote_newer: string | null }>('/demo/sync'),
+  markSynced: (saved_at: string) => request<{ ok: boolean }>('/demo/synced', json('POST', { saved_at })),
 
   stats: (from?: string, to?: string) => request<Stats>(`/reports/stats${qs({ from, to })}`),
   exportFormats: () => request<{ id: string; label: string }[]>('/reports/export/formats'),

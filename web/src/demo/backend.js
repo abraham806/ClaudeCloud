@@ -21,6 +21,8 @@ import { toBytes } from 'pdfkit/output';
 import Helvetica from 'pdfkit/standard-fonts/Helvetica';
 import HelveticaBold from 'pdfkit/standard-fonts/HelveticaBold';
 import { seedDemo } from './seed.js';
+import { exportDb, importDb } from './backup.js';
+import { fetchRemote } from './github.js';
 
 registerStdFonts(Helvetica, HelveticaBold);
 
@@ -31,23 +33,67 @@ function getDb() {
   dbPromise ??= (async () => {
     const lite = new PGlite('idb://facturo-demo', { parsers: { 20: toNumber, 1700: toNumber } });
     await lite.exec(`${SCHEMA}
-      CREATE TABLE IF NOT EXISTS demo_files (key TEXT PRIMARY KEY, data BYTEA NOT NULL);`);
-    return {
+      CREATE TABLE IF NOT EXISTS demo_files (key TEXT PRIMARY KEY, data BYTEA NOT NULL);
+      CREATE TABLE IF NOT EXISTS demo_meta (key TEXT PRIMARY KEY, value TEXT);`);
+    // Demande au navigateur de ne pas effacer ces données quand l'espace manque.
+    navigator.storage?.persist?.().catch(() => {});
+    const db = {
       ...wrap((text, values) => lite.query(text, values)),
       tx: (fn) => lite.transaction((t) => fn(wrap((text, values) => t.query(text, values)))),
       // Force l'écriture dans IndexedDB (sinon une fermeture rapide de l'onglet peut perdre la saisie).
       sync: () => lite.syncToFs(),
     };
+    await pullFromGithub(db).catch((e) => console.warn('Sauvegarde GitHub non chargée :', e.message));
+    return db;
   })();
   return dbPromise;
 }
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
-async function hash(password) {
-  const data = new TextEncoder().encode(`facturo-demo:${password}`);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+// Mots de passe : PBKDF2 avec sel (les sauvegardes peuvent être publiées dans le dépôt GitHub).
+async function hash(password, saltHex) {
+  const salt = saltHex ? Uint8Array.from(saltHex.match(/../g), (h) => parseInt(h, 16)) : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 210000 }, key, 256);
+  return `pbkdf2$${hex(salt)}$${hex(bits)}`;
+}
+
+async function verify(password, stored) {
+  if (stored?.startsWith('pbkdf2$')) return (await hash(password, stored.split('$')[1])) === stored;
+  // Anciens comptes de la démo (SHA-256 simple).
+  return stored === hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`facturo-demo:${password}`)));
+}
+
+// --- Sauvegarde GitHub ---------------------------------------------------------
+const meta = {
+  get: async (db, key) => (await db.one('SELECT value FROM demo_meta WHERE key = $1', [key]))?.value ?? null,
+  set: (db, key, value) => db.run(
+    'INSERT INTO demo_meta (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
+    [key, value],
+  ),
+};
+
+// Au démarrage : charge la sauvegarde du dépôt si ce navigateur n'a pas de données,
+// ou si elle est plus récente et qu'aucune modification locale n'attend d'être envoyée.
+async function pullFromGithub(db) {
+  const remote = await fetchRemote();
+  if (!remote?.saved_at) return;
+  const [synced, dirty, local] = await Promise.all([
+    meta.get(db, 'synced_at'), meta.get(db, 'dirty'), db.one('SELECT COUNT(*) AS n FROM companies'),
+  ]);
+  const empty = Number(local.n) === 0;
+  const newer = !synced || remote.saved_at > synced;
+  if ((empty && !synced) || (newer && dirty !== '1')) {
+    await importDb(db, remote);
+    await meta.set(db, 'synced_at', remote.saved_at);
+    await meta.set(db, 'dirty', '0');
+    await db.sync();
+  } else if (newer) {
+    await meta.set(db, 'remote_newer', remote.saved_at);
+  }
 }
 
 const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, company_id: u.company_id });
@@ -95,7 +141,7 @@ const ROUTES = [
   ['POST', '/auth/login', false, async ({ db, body }) => {
     const input = parse(loginSchema, body);
     const user = await db.one('SELECT * FROM users WHERE email = $1', [input.email]);
-    if (!user || user.password_hash !== (await hash(input.password))) throw fail(401, 'Email ou mot de passe incorrect');
+    if (!user || !(await verify(input.password, user.password_hash))) throw fail(401, 'Email ou mot de passe incorrect');
     return json({ token: token(user), user: publicUser(user) });
   }],
   ['GET', '/auth/me', true, async ({ db, user }) => {
@@ -105,7 +151,7 @@ const ROUTES = [
   ['PUT', '/auth/password', true, async ({ db, user, body }) => {
     const input = parse(passwordSchema, body);
     const u = await db.one('SELECT * FROM users WHERE id = $1', [user.id]);
-    if (u.password_hash !== (await hash(input.current_password))) throw fail(400, 'Mot de passe actuel incorrect');
+    if (!(await verify(input.current_password, u.password_hash))) throw fail(400, 'Mot de passe actuel incorrect');
     await db.run('UPDATE users SET password_hash = $1 WHERE id = $2', [await hash(input.new_password), user.id]);
     return new Response(null, { status: 204 });
   }],
@@ -292,6 +338,28 @@ const ROUTES = [
     return file(buffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   }],
 
+  // Propre à la démo : sauvegarde complète, restauration, état de la synchronisation GitHub.
+  ['GET', '/demo/backup', true, async ({ db }) => json(await exportDb(db))],
+  ['POST', '/demo/restore', true, async ({ db, user, body }) => {
+    owner(user);
+    await importDb(db, body);
+    await meta.set(db, 'synced_at', body.saved_at || new Date().toISOString());
+    await meta.set(db, 'dirty', '0');
+    await db.run("DELETE FROM demo_meta WHERE key = 'remote_newer'");
+    return new Response(null, { status: 204 });
+  }],
+  ['GET', '/demo/sync', true, async ({ db }) => json({
+    synced_at: await meta.get(db, 'synced_at'),
+    dirty: (await meta.get(db, 'dirty')) === '1',
+    remote_newer: await meta.get(db, 'remote_newer'),
+  })],
+  ['POST', '/demo/synced', true, async ({ db, body }) => {
+    await meta.set(db, 'synced_at', String(body.saved_at));
+    await meta.set(db, 'dirty', '0');
+    await db.run("DELETE FROM demo_meta WHERE key = 'remote_newer'");
+    return json({ ok: true });
+  }],
+
   // Propre à la démo : données d'exemple et remise à zéro.
   ['POST', '/demo/seed', true, async ({ db, user }) => {
     writer(user);
@@ -339,7 +407,14 @@ export async function handle(path, init = {}, headers = new Headers()) {
       user: route.auth ? await currentUser(db, headers) : null,
     };
     const res = await route.handler(ctx);
-    if (method !== 'GET') await db.sync();
+    if (method !== 'GET') {
+      // Toute modification (hors synchronisation elle-même) devra être renvoyée sur GitHub.
+      if (res.ok && !['/auth/login', '/demo/restore', '/demo/synced'].includes(url.pathname)) {
+        await meta.set(db, 'dirty', '1');
+        window.dispatchEvent(new CustomEvent('leukflow:changed'));
+      }
+      await db.sync();
+    }
     return res;
   } catch (e) {
     if (!e.status) console.error(e);

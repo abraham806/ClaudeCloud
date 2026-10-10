@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { api, type Company, type Role, type User } from '../api';
+import { api, DEMO, type Company, type Role, type User } from '../api';
 import { useAuth } from '../auth';
 import { CURRENCIES, initials } from '../format';
 import { Icon } from '../icons';
 import { ThemeSwitch } from '../theme';
+import { DemoSyncCard } from '../demo/Sync';
 
 const ROLE_LABEL: Record<Role, string> = { owner: 'Propriétaire', member: 'Collaborateur', accountant: 'Comptable (lecture seule)' };
 
@@ -63,6 +64,7 @@ export default function Settings() {
         </form>
 
         <div className="stack">
+          {DEMO && <DemoSyncCard />}
           <Link to="/app/variables" className="hint-card">
             <Icon name="sliders" />
             <span className="grow"><strong className="small">Variables</strong><br />
