@@ -5,6 +5,7 @@ import { useAuth } from './auth';
 import { initials } from './format';
 import { Icon, type IconName } from './icons';
 import { ThemeSwitch, ThemeToggle } from './theme';
+import { LogoFull, LogoMark } from './logo';
 
 const NAV: { section?: string; to: string; label: string; icon: IconName; end?: boolean; badge?: 'missing' }[] = [
   { section: 'Général', to: '/app', label: 'Tableau de bord', icon: 'dashboard', end: true },
@@ -33,9 +34,10 @@ export default function Layout() {
   return (
     <div className="shell">
       <aside className={`sidebar ${drawer ? 'open' : ''}`} aria-label="Menu">
-        <Link to="/app" className="brand">
-          <span className="logo">F</span>
-          <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
+        <Link to="/app" className="brand side-brand" aria-label="LeukFlow — tableau de bord">
+          <span className="hide-mobile"><LogoFull height={24} /></span>
+          <span className="show-mobile"><LogoMark size={30} /></span>
+          <span className="side-company">{company?.name}</span>
         </Link>
         <nav className="nav" aria-label="Navigation principale">
           {NAV.map((n) => (
@@ -74,8 +76,8 @@ export default function Layout() {
         <header className="mobile-top">
           <button className="btn ghost icon" onClick={() => setDrawer(true)} aria-label="Ouvrir le menu"><Icon name="menu" size={20} /></button>
           <Link to="/app" className="brand grow" style={{ padding: 0 }}>
-            <span className="logo">F</span>
-            <span className="brand-text"><strong>Facturo</strong><span>{company?.name}</span></span>
+            <LogoMark size={30} />
+            <span className="brand-text"><strong>{company?.name}</strong></span>
           </Link>
           <ThemeToggle className="ghost" />
           <Link to="/app/parametres" className="avatar" aria-label="Compte" style={{ textDecoration: 'none' }}>

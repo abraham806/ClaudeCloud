@@ -151,7 +151,7 @@ export async function buildWorkbook(format, documents, company) {
   const fmt = EXPORT_FORMATS[format];
   if (!fmt) throw Object.assign(new Error(`Format d'export inconnu : ${format}`), { status: 400 });
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Facturo';
+  wb.creator = 'LeukFlow';
   wb.created = new Date();
   fmt.build(wb, documents, company);
   return wb.xlsx.writeBuffer();

@@ -8,7 +8,7 @@
 .lp-links { display: flex; gap: 24px; font-size: 14px; }
 .lp-links a { text-decoration: none; color: var(--text-2); }
 .lp-links a:hover { color: var(--text); }
-.lp-eyebrow { font-size: 14px; font-weight: 500; color: var(--accent); }
+.lp-eyebrow { font-size: 14px; font-weight: 600; color: var(--accent-text); }
 
 .lp-hero { position: relative; isolation: isolate; padding: 112px 20px 72px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 24px; }
 .lp-hero-halo { left: 50%; top: 40px; width: min(1100px, 120vw); height: 480px; transform: translateX(-50%); }
@@ -46,7 +46,7 @@
 .lp-senegal { position: relative; isolation: isolate; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 64px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 .lp-sn-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .lp-sn-list li { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
-.lp-sn-list li svg { color: var(--green); flex: none; margin-top: 2px; }
+.lp-sn-list li svg { color: var(--mint); flex: none; margin-top: 2px; }
 
 .lp-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .lp-plan { border: 1px solid var(--line); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); }

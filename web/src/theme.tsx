@@ -19,7 +19,7 @@ function read(): ThemeChoice {
 function apply(choice: ThemeChoice) {
   const dark = choice === 'dark' || (choice === 'system' && media().matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0a0a0a' : '#ffffff');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0a0f1d' : '#f3f4f6');
 }
 
 const listeners = new Set<(c: ThemeChoice) => void>();

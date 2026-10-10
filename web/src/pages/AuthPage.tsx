@@ -4,6 +4,7 @@ import { api, DEMO } from '../api';
 import { useAuth } from '../auth';
 import { CURRENCIES } from '../format';
 import { ThemeToggle } from '../theme';
+import { LogoFull, LogoMark } from '../logo';
 
 export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { signIn } = useAuth();
@@ -34,8 +35,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
         <div className="grid-bg" />
         <div className="halo" style={{ left: '-20%', right: '-20%', bottom: -160, height: 360 }} />
         <Link to="/" className="brand" style={{ padding: 0 }}>
-          <span className="logo">F</span>
-          <span className="brand-text"><strong>Facturo</strong></span>
+          <LogoFull height={28} />
         </Link>
         <div className="stack" style={{ gap: 16 }}>
           <h2>Fini les carnets de factures et les tickets perdus.</h2>
@@ -47,7 +47,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       <div className="auth-form">
         <ThemeToggle className="auth-theme" />
         <form onSubmit={submit}>
-          <Link to="/" className="brand show-mobile" style={{ padding: 0, marginBottom: 8 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span></Link>
+          <Link to="/" className="brand show-mobile" style={{ padding: 0, marginBottom: 8 }} aria-label="LeukFlow — accueil"><LogoMark size={40} /></Link>
           <h1>{login ? 'Connexion' : 'Créer mon compte'}</h1>
           <p className="muted small">{login ? 'Content de vous revoir.' : 'Gratuit pour démarrer. Aucune carte bancaire demandée.'}</p>
           {!login && (

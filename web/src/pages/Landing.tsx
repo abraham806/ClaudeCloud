@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { Icon, type IconName } from '../icons';
 import { ThemeToggle } from '../theme';
+import { LogoFull, LogoMark } from '../logo';
 import './landing.css';
 
 const STEPS: { icon: IconName; title: string; text: string }[] = [
@@ -12,7 +13,7 @@ const STEPS: { icon: IconName; title: string; text: string }[] = [
 
 const FEATURES: { icon: IconName; title: string; text: string }[] = [
   { icon: 'receipt', title: 'Factures, reçus et devis', text: 'Numérotation automatique, TVA calculée, PDF propre à votre nom avec NINEA et RCCM.' },
-  { icon: 'clip', title: 'Justificatifs au bon endroit', text: 'Chaque achat garde sa photo ou son PDF. Facturo vous signale ceux qui manquent.' },
+  { icon: 'clip', title: 'Justificatifs au bon endroit', text: 'Chaque achat garde sa photo ou son PDF. LeukFlow vous signale ceux qui manquent.' },
   { icon: 'chart', title: 'Tableau de bord clair', text: 'Ventes, dépenses, solde et TVA du mois. Les dépenses par catégorie, d’un coup d’œil.' },
   { icon: 'download', title: 'Export Excel comptable', text: 'Récapitulatif lisible ou écritures débit / crédit selon le plan SYSCOHADA.' },
   { icon: 'users', title: 'Accès pour votre comptable', text: 'Il consulte vos pièces et télécharge ses exports lui-même, sans pouvoir rien modifier.' },
@@ -29,8 +30,8 @@ const SENEGAL = [
 ];
 
 const FAQ = [
-  ['Faut-il installer une application ?', 'Non. Facturo s’ouvre dans le navigateur de votre téléphone ou de votre ordinateur. Sur téléphone, vous pouvez l’ajouter à l’écran d’accueil comme une application.'],
-  ['Mon comptable utilise déjà un logiciel. Est-ce compatible ?', 'Facturo produit un fichier Excel : un récapitulatif lisible ou un journal d’écritures débit / crédit (SYSCOHADA). Si votre comptable a besoin d’un format précis, il peut être ajouté.'],
+  ['Faut-il installer une application ?', 'Non. LeukFlow s’ouvre dans le navigateur de votre téléphone ou de votre ordinateur. Sur téléphone, vous pouvez l’ajouter à l’écran d’accueil comme une application.'],
+  ['Mon comptable utilise déjà un logiciel. Est-ce compatible ?', 'LeukFlow produit un fichier Excel : un récapitulatif lisible ou un journal d’écritures débit / crédit (SYSCOHADA). Si votre comptable a besoin d’un format précis, il peut être ajouté.'],
   ['Puis-je travailler à plusieurs ?', 'Oui. Ajoutez un collaborateur qui saisit les pièces, et votre comptable en lecture seule.'],
   ['Mes données sont-elles en sécurité ?', 'Chaque entreprise ne voit que ses propres données. L’accès est protégé par mot de passe et vos justificatifs sont stockés avec vos pièces.'],
   ['Que se passe-t-il pour mes anciens carnets ?', 'Vous pouvez saisir vos anciennes pièces avec leur date d’origine et joindre la photo de chaque page ou ticket.'],
@@ -52,7 +53,8 @@ export default function Landing() {
       <header className="lp-nav">
         <div className="row" style={{ gap: 32, flexWrap: 'nowrap' }}>
           <Link to="/" className="brand" style={{ padding: 0 }}>
-            <span className="logo">F</span><span className="brand-text"><strong>Facturo</strong></span>
+            <span className="hide-mobile"><LogoFull height={26} /></span>
+            <span className="show-mobile"><LogoMark size={32} /></span>
           </Link>
           <nav className="lp-links" aria-label="Sections">
             <a href="#fonctionnement">Comment ça marche</a>
@@ -92,7 +94,7 @@ export default function Landing() {
       <section className="lp-shot-wrap" aria-hidden="true">
         <div className="lp-shot-glow" />
         <div className="lp-shot">
-          <div className="lp-shot-bar"><i /><i /><i /><span>facturo.app/boutique-awa</span></div>
+          <div className="lp-shot-bar"><i /><i /><i /><span>leukflow.app/boutique-awa</span></div>
           <div className="lp-shot-body">
             {KPIS.map((k) => (
               <div key={k.l} className="lp-kpi">
@@ -147,7 +149,7 @@ export default function Landing() {
             <span className="lp-eyebrow">Pensé pour le Sénégal</span>
             <h2>Nos réalités, nos monnaies, nos habitudes.</h2>
             <p className="lp-sub">
-              Du boutiquier de Sandaga au cabinet de conseil du Plateau, Facturo parle votre langue :
+              Du boutiquier de Sandaga au cabinet de conseil du Plateau, LeukFlow parle votre langue :
               le FCFA, la TVA à 18 %, le NINEA, Wave et Orange Money, et WhatsApp pour tout envoyer.
             </p>
             <Link to={cta.to} className="btn dark lg" style={{ alignSelf: 'flex-start' }}>{cta.label}</Link>
@@ -167,7 +169,7 @@ export default function Landing() {
             { name: 'Cabinet', price: '[PRIX] F / mois', text: 'Pour les comptables qui suivent plusieurs clients.', items: ['Plusieurs entreprises', 'Exports groupés', 'Assistance prioritaire'] },
           ].map((p) => (
             <div key={p.name} className={`lp-plan ${p.featured ? 'card glow' : ''}`}>
-              <div className="between"><h3>{p.name}</h3>{p.featured && <span className="pill quote">Conseillé</span>}</div>
+              <div className="between"><h3>{p.name}</h3>{p.featured && <span className="pill mint">Conseillé</span>}</div>
               <strong className="lp-price">{p.price}</strong>
               <p>{p.text}</p>
               <ul>{p.items.map((i) => <li key={i}><Icon name="check" size={14} />{i}</li>)}</ul>
@@ -199,9 +201,9 @@ export default function Landing() {
       </section>
 
       <footer className="lp-footer">
-        <span className="brand" style={{ padding: 0 }}><span className="logo">F</span><span className="brand-text"><strong>Facturo</strong><span>Dakar, Sénégal</span></span></span>
+        <span className="brand" style={{ padding: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}><span className="hide-mobile"><LogoFull height={22} /></span><span className="show-mobile"><LogoMark size={30} /></span><span className="xs muted">Dakar, Sénégal</span></span>
         <span className="small muted">Contact : [EMAIL] · WhatsApp : [NUMÉRO]</span>
-        <span className="small muted">© {new Date().getFullYear()} Facturo</span>
+        <span className="small muted">© {new Date().getFullYear()} LeukFlow</span>
       </footer>
     </div>
   );
